@@ -3,12 +3,20 @@ import "./index.css";
 import * as ts from "typescript";
 
 /**
+ * Determines whether a line of code looks like a declaration rather than an expression.
+ * You can add more patterns if needed.
+ */
+function isDeclaration(line: string): boolean {
+  return /^\s*(const|let|var|function|class)\s+/.test(line);
+}
+
+/**
  * Transforms user code to automatically return the value of the last expression,
  * similar to a Jupyter Notebook.
  *
  * The strategy is to separate out any top-level import statements from the rest.
  * The remaining code (if any) is wrapped in an IIFE that returns the value of the
- * last non-empty line. The result is then exported as the default export.
+ * last non-empty line—unless that line appears to be a declaration.
  *
  * If the user already calls display on the last line (i.e. it starts with "display(")
  * then no transformation is done.
@@ -35,7 +43,7 @@ function transformUserCode(code: string): string {
     nonImportLines.pop();
   }
 
-  // If there is no non-import code, return the original code.
+  // If there's no non-import code, return the original code.
   if (nonImportLines.length === 0) {
     return code;
   }
@@ -44,6 +52,11 @@ function transformUserCode(code: string): string {
   const lastLine = nonImportLines[nonImportLines.length - 1].trim();
   // If the last line already calls "display(", assume the user is handling output.
   if (lastLine.startsWith("display(")) {
+    return code;
+  }
+
+  // If the last line appears to be a declaration, then we do not wrap it.
+  if (isDeclaration(lastLine)) {
     return code;
   }
 
