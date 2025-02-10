@@ -1,30 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import * as ts from "typescript";
 import "./index.css";
 
-/**
- * Helper: Returns true if a line appears to be a declaration rather than an expression.
- */
+// --- CodeMirror imports ---
+import { EditorState, Compartment } from "@codemirror/state";
+import { basicSetup } from "codemirror";
+import { EditorView } from "@codemirror/view";
+import { javascript } from "@codemirror/lang-javascript";
+import { oneDark } from "@codemirror/theme-one-dark";
+
+// ----------------------
+// Helper: Returns true if a line appears to be a declaration rather than an expression.
 function isDeclaration(line: string): boolean {
   return /^\s*(const|let|var|function|class)\s+/.test(line);
 }
 
-/**
- * Transforms user code to automatically return the value of the last expression,
- * similar to a Jupyter Notebook.
- *
- * It first separates top‑level import statements from the rest of the code. If the
- * last non‑import line is not a declaration and does not start with "display(", it is
- * wrapped in an IIFE that returns its value. Otherwise, the code is returned as‑is.
- */
-/**
- * Transforms user code to automatically return the value of the last expression,
- * similar to a Jupyter Notebook.
- *
- * It first separates top‑level import statements from the rest of the code. If the
- * last non‑import line is not a declaration and does not start with "display(", it is
- * wrapped in an IIFE that returns its value. Otherwise, the code is returned as‑is.
- */
+// ----------------------
+// Transforms user code to automatically return the value of the last expression,
+// similar to a Jupyter Notebook.
+// It separates top-level import statements from the rest and, if the last non-import line
+// is an expression (and not a declaration or a call to display), wraps it in an IIFE that returns its value.
 function transformUserCode(code: string): string {
   const lines = code.split("\n");
 
@@ -84,14 +79,12 @@ ${bodyCode}
 `;
 }
 
-/**
- * Executes the provided code (which may be JavaScript or TypeScript). If the code does
- * not explicitly call display(), and if the last non‑declaration expression has a value,
- * that value is passed to the display function.
- *
- * The code is dynamically imported as an ES module via a Blob URL. If the language is
- * TypeScript, it is first transpiled to ES module syntax.
- */
+// ----------------------
+// Executes the provided code (JavaScript or TypeScript). If the code does
+// not explicitly call display(), and if the last non-declaration expression has a value,
+// that value is passed to the display function.
+// The code is imported dynamically as an ES module via a Blob URL. If the language is
+// TypeScript, it is transpiled first.
 async function runCode(code: string, language: string): Promise<string> {
   let output = "";
   const logs: string[] = [];
@@ -119,7 +112,7 @@ async function runCode(code: string, language: string): Promise<string> {
 
     let transpiledCode = finalCode;
     if (language === "typescript") {
-      // Use transpileModule with ES module options.
+      // Transpile TypeScript to ES module code.
       const result = ts.transpileModule(finalCode, {
         compilerOptions: {
           module: ts.ModuleKind.ESNext, // output as ES module
@@ -137,12 +130,12 @@ async function runCode(code: string, language: string): Promise<string> {
       // Dynamically import the module.
       const module = await import(/* @vite-ignore */ moduleUrl);
 
-      // Expose every export from the cell globally (for cross‑cell usage).
+      // Expose every export from the cell globally (for cross-cell usage).
       Object.keys(module).forEach((exportKey) => {
         (window as any)[exportKey] = module[exportKey];
       });
 
-      // If the default export (the auto‑returned value) is not undefined, display it.
+      // If the default export (the auto-return value) is not undefined, display it.
       if (module.default !== undefined) {
         display(module.default);
       }
@@ -162,25 +155,106 @@ async function runCode(code: string, language: string): Promise<string> {
   return output;
 }
 
-/**
- * Interface for a notebook cell's data.
- */
+// ----------------------
+// CodeMirror Editor component
+interface CodeEditorProps {
+  value: string;
+  language: "javascript" | "typescript";
+  onChange: (value: string) => void;
+}
+
+const CodeEditor: React.FC<CodeEditorProps> = ({
+  value,
+  language,
+  onChange,
+}) => {
+  const editorDivRef = useRef<HTMLDivElement>(null);
+  const editorViewRef = useRef<EditorView>();
+  // Create a compartment for the language extension.
+  const languageCompartment = useRef(new Compartment());
+
+  useEffect(() => {
+    if (editorDivRef.current) {
+      // Create an EditorState with initial doc and extensions.
+      const startState = EditorState.create({
+        doc: value,
+        extensions: [
+          basicSetup,
+          oneDark,
+          languageCompartment.current.of(
+            language === "javascript"
+              ? javascript()
+              : javascript({ typescript: true })
+          ),
+          // Update listener to propagate changes.
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              const text = update.state.doc.toString();
+              onChange(text);
+            }
+          }),
+        ],
+      });
+      // Create the EditorView.
+      const view = new EditorView({
+        state: startState,
+        parent: editorDivRef.current,
+      });
+      editorViewRef.current = view;
+
+      return () => {
+        view.destroy();
+      };
+    }
+  }, []); // initialize once on mount
+
+  // Update editor content if the external value changes.
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (view) {
+      const currentValue = view.state.doc.toString();
+      if (currentValue !== value) {
+        view.dispatch({
+          changes: { from: 0, to: currentValue.length, insert: value },
+        });
+      }
+    }
+  }, [value]);
+
+  // Update language if it changes using the compartment.
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (view) {
+      const newExtension =
+        language === "javascript"
+          ? javascript()
+          : javascript({ typescript: true });
+      view.dispatch({
+        effects: languageCompartment.current.reconfigure(newExtension),
+      });
+    }
+  }, [language]);
+
+  return <div ref={editorDivRef} />;
+};
+
+// ----------------------
+// Notebook cell data interface.
 interface CellData {
   id: number;
   code: string;
   language: "javascript" | "typescript";
 }
 
-/**
- * A single notebook cell. It shows a textarea for code input, a language selector,
- * a play button to execute the cell, and an output area.
- */
-interface CellProps {
+// ----------------------
+// A single notebook cell. It shows a CodeMirror editor (our CodeEditor component),
+// a language selector, a run button, and an output area.
+interface NotebookCellProps {
   cell: CellData;
   onChange: (id: number, changes: Partial<CellData>) => void;
 }
 
-const Cell: React.FC<CellProps> = ({ cell, onChange }) => {
+const Cell: React.FC<NotebookCellProps> = ({ cell, onChange }) => {
   const [output, setOutput] = useState<string>("");
 
   const handleRun = async () => {
@@ -188,8 +262,8 @@ const Cell: React.FC<CellProps> = ({ cell, onChange }) => {
     setOutput(result);
   };
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(cell.id, { code: e.target.value });
+  const handleCodeChange = (newValue: string) => {
+    onChange(cell.id, { code: newValue });
   };
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -214,17 +288,11 @@ const Cell: React.FC<CellProps> = ({ cell, onChange }) => {
           <option value="typescript">TypeScript</option>
         </select>
       </div>
-      <textarea
-        style={{
-          width: "100%",
-          height: "100px",
-          fontFamily: "monospace",
-          padding: "0.5em",
-          boxSizing: "border-box",
-        }}
+      {/* Use the CodeEditor instead of a plain textarea */}
+      <CodeEditor
         value={cell.code}
+        language={cell.language}
         onChange={handleCodeChange}
-        placeholder="Enter your code here..."
       />
       <div style={{ marginTop: "0.5em" }}>
         <button onClick={handleRun}>▶ Run Cell</button>
@@ -245,10 +313,9 @@ const Cell: React.FC<CellProps> = ({ cell, onChange }) => {
   );
 };
 
-/**
- * The Notebook component holds an array of cells. Cells share a global namespace,
- * so variables declared in one cell are available in later cells.
- */
+// ----------------------
+// The Notebook component holds an array of cells.
+// Cells share a global namespace so that variables declared in one cell are available in later cells.
 const Notebook: React.FC = () => {
   const [cells, setCells] = useState<CellData[]>([
     {
@@ -269,7 +336,7 @@ b;`,
     },
   ]);
 
-  // Update cell data based on changes from a cell (code and/or language).
+  // Update cell data based on changes from a cell.
   const updateCell = (id: number, changes: Partial<CellData>) => {
     setCells((prev) =>
       prev.map((cell) => (cell.id === id ? { ...cell, ...changes } : cell))
