@@ -352,8 +352,12 @@ interface CellHandle {
 // a language selector, a run button, and an output area.
 const Cell = forwardRef<
   CellHandle,
-  { cell: CellData; onChange: (id: number, changes: Partial<CellData>) => void }
->(({ cell, onChange }, ref) => {
+  {
+    cell: CellData;
+    onChange: (id: number, changes: Partial<CellData>) => void;
+    onDelete: (id: number) => void;
+  }
+>(({ cell, onChange, onDelete }, ref) => {
   const [output, setOutput] = useState<string>("");
 
   const handleRun = async () => {
@@ -376,6 +380,10 @@ const Cell = forwardRef<
     });
   };
 
+  const handleDelete = () => {
+    onDelete(cell.id);
+  };
+
   return (
     <div className="bg-white shadow rounded p-4 my-4">
       <div className="mb-2 flex items-center space-x-2">
@@ -392,6 +400,12 @@ const Cell = forwardRef<
           className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
         >
           <PlayCircle className="w-4 h-4" />
+        </button>
+        <button
+          onClick={handleDelete}
+          className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+        >
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
       <CodeEditor
@@ -423,6 +437,11 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
     const newCells = cells.map((cell) =>
       cell.id === id ? { ...cell, ...changes } : cell
     );
+    onCellsChange(newCells);
+  };
+
+  const deleteCell = (id: number) => {
+    const newCells = cells.filter((cell) => cell.id !== id);
     onCellsChange(newCells);
   };
 
@@ -498,6 +517,7 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
           key={cell.id}
           cell={cell}
           onChange={updateCell}
+          onDelete={deleteCell}
           ref={cellRefs.current.get(cell.id)}
         />
       ))}
