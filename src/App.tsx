@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import * as ts from "typescript";
 import "./index.css";
 
@@ -247,20 +253,29 @@ interface CellData {
 }
 
 // ----------------------
-// A single notebook cell. It shows a CodeMirror editor (our CodeEditor component),
-// a language selector, a run button, and an output area.
-interface NotebookCellProps {
-  cell: CellData;
-  onChange: (id: number, changes: Partial<CellData>) => void;
+// CellHandle interface to expose a runCell method.
+interface CellHandle {
+  runCell: () => Promise<void>;
 }
 
-const Cell: React.FC<NotebookCellProps> = ({ cell, onChange }) => {
+// ----------------------
+// A single notebook cell. It shows a CodeMirror editor (our CodeEditor component),
+// a language selector, a run button, and an output area.
+const Cell = forwardRef<
+  CellHandle,
+  { cell: CellData; onChange: (id: number, changes: Partial<CellData>) => void }
+>(({ cell, onChange }, ref) => {
   const [output, setOutput] = useState<string>("");
 
   const handleRun = async () => {
     const result = await runCode(cell.code, cell.language);
     setOutput(result);
   };
+
+  // Expose the runCell function to parent via ref.
+  useImperativeHandle(ref, () => ({
+    runCell: handleRun,
+  }));
 
   const handleCodeChange = (newValue: string) => {
     onChange(cell.id, { code: newValue });
@@ -311,11 +326,12 @@ const Cell: React.FC<NotebookCellProps> = ({ cell, onChange }) => {
       )}
     </div>
   );
-};
+});
 
 // ----------------------
 // The Notebook component holds an array of cells.
 // Cells share a global namespace so that variables declared in one cell are available in later cells.
+// A top nav toolbar is added with a "Run All Cells" button.
 const Notebook: React.FC = () => {
   const [cells, setCells] = useState<CellData[]>([
     {
@@ -336,11 +352,31 @@ b;`,
     },
   ]);
 
-  // Update cell data based on changes from a cell.
+  // Create refs for each cell.
+  const cellRefs = useRef<Map<number, React.RefObject<CellHandle>>>(new Map());
+
+  // Ensure each cell has a ref.
+  cells.forEach((cell) => {
+    if (!cellRefs.current.has(cell.id)) {
+      cellRefs.current.set(cell.id, React.createRef<CellHandle>());
+    }
+  });
+
+  // Function to update cell data.
   const updateCell = (id: number, changes: Partial<CellData>) => {
     setCells((prev) =>
       prev.map((cell) => (cell.id === id ? { ...cell, ...changes } : cell))
     );
+  };
+
+  // Run all cells by iterating over their refs.
+  const runAllCells = async () => {
+    for (const cell of cells) {
+      const ref = cellRefs.current.get(cell.id);
+      if (ref && ref.current) {
+        await ref.current.runCell();
+      }
+    }
   };
 
   const addCell = () => {
@@ -350,9 +386,28 @@ b;`,
 
   return (
     <div className="notebook" style={{ maxWidth: "800px", margin: "auto" }}>
-      <h1>My Notebook</h1>
+      {/* Top Navigation Toolbar */}
+      <header
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "1em",
+          background: "#eee",
+          borderBottom: "1px solid #ddd",
+          marginBottom: "1em",
+        }}
+      >
+        <h1>My Notebook</h1>
+        <button onClick={runAllCells}>▶ Run All Cells</button>
+      </header>
       {cells.map((cell) => (
-        <Cell key={cell.id} cell={cell} onChange={updateCell} />
+        <Cell
+          key={cell.id}
+          cell={cell}
+          onChange={updateCell}
+          ref={cellRefs.current.get(cell.id)}
+        />
       ))}
       <button onClick={addCell} style={{ marginTop: "1em" }}>
         + Add Cell
