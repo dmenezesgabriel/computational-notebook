@@ -389,10 +389,9 @@ const Cell = forwardRef<
         </select>
         <button
           onClick={handleRun}
-          className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+          className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
         >
-          <PlayCircle className="w-4 h-4 mr-1" />
-          Run Cell
+          <PlayCircle className="w-4 h-4" />
         </button>
       </div>
       <CodeEditor
@@ -469,21 +468,23 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={runAllCells}
-          className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-        >
-          <PlayCircle className="w-4 h-4 mr-1" />
-          Run All Cells
-        </button>
-        <button
-          onClick={formatAllCells}
-          className="flex items-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-        >
-          <PlayCircle className="w-4 h-4 mr-1" />
-          Format All Cells
-        </button>
+      <div className="flex items-center mb-4">
+        <div className="flex flex-row grow gap-2">
+          <button
+            onClick={runAllCells}
+            className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+          >
+            <PlayCircle className="w-4 h-4 mr-1" />
+            Run All Cells
+          </button>
+          <button
+            onClick={formatAllCells}
+            className="flex items-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+          >
+            <PlayCircle className="w-4 h-4 mr-1" />
+            Format All Cells
+          </button>
+        </div>
         <button
           onClick={addCell}
           className="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded"
