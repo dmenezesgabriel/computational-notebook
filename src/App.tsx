@@ -619,6 +619,13 @@ b;`,
     );
   };
 
+  // Update a notebook's title.
+  const updateNotebookTitle = (id: number, newTitle: string) => {
+    setNotebooks(
+      notebooks.map((nb) => (nb.id === id ? { ...nb, title: newTitle } : nb))
+    );
+  };
+
   // Get the active notebook.
   const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
 
@@ -673,7 +680,12 @@ b;`,
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                <span>{nb.title}</span>
+                <input
+                  type="text"
+                  value={nb.title}
+                  onChange={(e) => updateNotebookTitle(id, e.target.value)}
+                  className="bg-transparent border-none focus:outline-none"
+                />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
