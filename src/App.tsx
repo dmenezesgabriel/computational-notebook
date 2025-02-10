@@ -6,6 +6,10 @@ import React, {
   forwardRef,
 } from "react";
 import * as ts from "typescript";
+import prettier from "prettier/standalone";
+import * as parserBabel from "prettier/parser-babel";
+import * as parserTypescript from "prettier/parser-typescript";
+import * as prettierPluginEstree from "prettier/plugins/estree";
 import "./index.css";
 
 // --- CodeMirror imports ---
@@ -18,7 +22,73 @@ import { oneDark } from "@codemirror/theme-one-dark";
 // --- lucide-react icons ---
 import { Plus, Trash2, X, PlayCircle } from "lucide-react";
 
+// ------------------------------------
+// This file contains a complete example of a simple notebook application
+// built using React and CodeMirror. It allows creating, editing, and running
+// JavaScript and TypeScript code cells. The code cells are executed in an
+// isolated environment using a sandboxed iframe.
+
 // ----------------------
+// Execute JavaScript code in a sandboxed iframe.
+// This function creates an iframe, injects the provided code into it, and
+// captures the console output and errors.
+async function runInSandbox(code: string): Promise<string> {
+  const iframe = document.createElement("iframe");
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  const consoleLog = console.log;
+  const consoleError = console.error;
+  const consoleWarn = console.warn;
+
+  const logs: string[] = [];
+  console.log = (...args: any[]) => {
+    logs.push(
+      args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")
+    );
+  };
+  console.error = (...args: any[]) => {
+    logs.push(
+      `ERROR: ${args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")}`
+    );
+  };
+  console.warn = (...args: any[]) => {
+    logs.push(
+      `WARNING: ${args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")}`
+    );
+  };
+
+  try {
+    iframe.contentWindow?.eval(code);
+  } catch (error: any) {
+    logs.push(`ERROR: ${error.message}`);
+  } finally {
+    console.log = consoleLog;
+    console.error = consoleError;
+    console.warn = consoleWarn;
+    iframe.remove();
+  }
+
+  return logs.join("\n");
+}
+
+// ----------------------
+// Execute TypeScript code using the TypeScript compiler.
+// This function transpiles the TypeScript code to JavaScript using the TypeScript compiler,
+// then executes it in a sandboxed iframe.
+async function runTypeScript(code: string): Promise<string> {
+  const transpiledCode = ts.transpileModule(code, {
+    compilerOptions: {
+      module: ts.ModuleKind.None,
+      target: ts.ScriptTarget.ESNext,
+    },
+  }).outputText;
+  return runInSandbox(transpiledCode);
+}
+
+// ----------------------
+// Execute the provided code (JavaScript or TypeScript) in a sandboxed iframe.
+// The language parameter specifies the language of the code.
 // Helper: Returns true if a line appears to be a declaration rather than an expression.
 function isDeclaration(line: string): boolean {
   return /^\s*(const|let|var|function|class)\s+/.test(line);
@@ -168,6 +238,14 @@ async function runCode(code: string, language: string): Promise<string> {
 
   output = logs.length ? logs.join("\n") : "Code executed successfully.";
   return output;
+}
+
+// ----------------------
+// Format code using Prettier
+async function formatCode(code: string, language: string): Promise<string> {
+  const parser = language === "typescript" ? "typescript" : "babel";
+  const plugins = [parserTypescript, parserBabel, prettierPluginEstree];
+  return prettier.format(code, { parser, plugins });
 }
 
 // ----------------------
@@ -374,6 +452,21 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
     }
   };
 
+  const formatAllCells = async () => {
+    const formattedCells = await Promise.all(
+      cells.map(async (cell) => {
+        try {
+          const formattedCode = await formatCode(cell.code, cell.language);
+          return { ...cell, code: formattedCode };
+        } catch (error) {
+          console.error(`Error formatting cell ${cell.id}:`, error);
+          return cell;
+        }
+      })
+    );
+    onCellsChange(formattedCells);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -383,6 +476,13 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
         >
           <PlayCircle className="w-4 h-4 mr-1" />
           Run All Cells
+        </button>
+        <button
+          onClick={formatAllCells}
+          className="flex items-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+        >
+          <PlayCircle className="w-4 h-4 mr-1" />
+          Format All Cells
         </button>
         <button
           onClick={addCell}
