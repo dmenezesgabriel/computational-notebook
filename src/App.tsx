@@ -15,6 +15,9 @@ import { EditorView } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 
+// --- lucide-react icons ---
+import { Plus, Trash2, X, PlayCircle } from "lucide-react";
+
 // ----------------------
 // Helper: Returns true if a line appears to be a declaration rather than an expression.
 function isDeclaration(line: string): boolean {
@@ -25,7 +28,8 @@ function isDeclaration(line: string): boolean {
 // Transforms user code to automatically return the value of the last expression,
 // similar to a Jupyter Notebook.
 // It separates top-level import statements from the rest and, if the last non-import line
-// is an expression (and not a declaration or a call to display), wraps it in an IIFE that returns its value.
+// is an expression (and not a declaration, a call to display, or a lone closing brace),
+// wraps it in an IIFE that returns its value.
 function transformUserCode(code: string): string {
   const lines = code.split("\n");
 
@@ -63,6 +67,11 @@ function transformUserCode(code: string): string {
 
   // If the last line is a declaration, don’t wrap it.
   if (isDeclaration(lastLine)) {
+    return code;
+  }
+
+  // If the last line starts with a closing brace (or is just "}") then do not wrap it.
+  if (lastLine.startsWith("}")) {
     return code;
   }
 
@@ -241,7 +250,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     }
   }, [language]);
 
-  return <div ref={editorDivRef} />;
+  return (
+    <div ref={editorDivRef} className="rounded-md border border-gray-300" />
+  );
 };
 
 // ----------------------
@@ -288,39 +299,31 @@ const Cell = forwardRef<
   };
 
   return (
-    <div
-      className="cell"
-      style={{
-        border: "1px solid #ddd",
-        margin: "1em 0",
-        padding: "1em",
-        borderRadius: "4px",
-      }}
-    >
-      <div style={{ marginBottom: "0.5em" }}>
-        <select value={cell.language} onChange={handleLanguageChange}>
+    <div className="bg-white shadow rounded p-4 my-4">
+      <div className="mb-2 flex items-center space-x-2">
+        <select
+          value={cell.language}
+          onChange={handleLanguageChange}
+          className="border border-gray-300 rounded px-2 py-1"
+        >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
         </select>
+        <button
+          onClick={handleRun}
+          className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+        >
+          <PlayCircle className="w-4 h-4 mr-1" />
+          Run Cell
+        </button>
       </div>
-      {/* Use the CodeEditor instead of a plain textarea */}
       <CodeEditor
         value={cell.code}
         language={cell.language}
         onChange={handleCodeChange}
       />
-      <div style={{ marginTop: "0.5em" }}>
-        <button onClick={handleRun}>▶ Run Cell</button>
-      </div>
       {output && (
-        <pre
-          style={{
-            background: "#f8f8f8",
-            padding: "0.5em",
-            marginTop: "0.5em",
-            whiteSpace: "pre-wrap",
-          }}
-        >
+        <pre className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm">
           {output}
         </pre>
       )}
@@ -329,47 +332,39 @@ const Cell = forwardRef<
 });
 
 // ----------------------
-// The Notebook component holds an array of cells.
-// Cells share a global namespace so that variables declared in one cell are available in later cells.
-// A top nav toolbar is added with a "Run All Cells" button.
-const Notebook: React.FC = () => {
-  const [cells, setCells] = useState<CellData[]>([
-    {
-      id: 1,
-      code: `// JavaScript cell example:
-const a = 3;
-a + 2;`,
-      language: "javascript",
-    },
-    {
-      id: 2,
-      code: `// TypeScript cell example:
-import * as math from "https://cdn.jsdelivr.net/npm/mathjs@12.3.0/+esm";
+// NotebookContent: A controlled notebook view (list of cells) with "Run All" and "Add Cell" controls.
+interface NotebookContentProps {
+  cells: CellData[];
+  onCellsChange: (cells: CellData[]) => void;
+}
 
-const b: number = math.sqrt(16);
-b;`,
-      language: "typescript",
-    },
-  ]);
+const NotebookContent: React.FC<NotebookContentProps> = ({
+  cells,
+  onCellsChange,
+}) => {
+  const updateCell = (id: number, changes: Partial<CellData>) => {
+    const newCells = cells.map((cell) =>
+      cell.id === id ? { ...cell, ...changes } : cell
+    );
+    onCellsChange(newCells);
+  };
 
-  // Create refs for each cell.
+  const addCell = () => {
+    const newId = cells.length ? cells[cells.length - 1].id + 1 : 1;
+    onCellsChange([
+      ...cells,
+      { id: newId, code: "// New cell", language: "javascript" },
+    ]);
+  };
+
+  // Create fresh refs by using a key (since cell ids may repeat across notebooks)
   const cellRefs = useRef<Map<number, React.RefObject<CellHandle>>>(new Map());
-
-  // Ensure each cell has a ref.
   cells.forEach((cell) => {
     if (!cellRefs.current.has(cell.id)) {
       cellRefs.current.set(cell.id, React.createRef<CellHandle>());
     }
   });
 
-  // Function to update cell data.
-  const updateCell = (id: number, changes: Partial<CellData>) => {
-    setCells((prev) =>
-      prev.map((cell) => (cell.id === id ? { ...cell, ...changes } : cell))
-    );
-  };
-
-  // Run all cells by iterating over their refs.
   const runAllCells = async () => {
     for (const cell of cells) {
       const ref = cellRefs.current.get(cell.id);
@@ -379,28 +374,24 @@ b;`,
     }
   };
 
-  const addCell = () => {
-    const newId = cells.length ? cells[cells.length - 1].id + 1 : 1;
-    setCells([...cells, { id: newId, code: "", language: "javascript" }]);
-  };
-
   return (
-    <div className="notebook" style={{ maxWidth: "800px", margin: "auto" }}>
-      {/* Top Navigation Toolbar */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "1em",
-          background: "#eee",
-          borderBottom: "1px solid #ddd",
-          marginBottom: "1em",
-        }}
-      >
-        <h1>My Notebook</h1>
-        <button onClick={runAllCells}>▶ Run All Cells</button>
-      </header>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <button
+          onClick={runAllCells}
+          className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+        >
+          <PlayCircle className="w-4 h-4 mr-1" />
+          Run All Cells
+        </button>
+        <button
+          onClick={addCell}
+          className="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Add Cell
+        </button>
+      </div>
       {cells.map((cell) => (
         <Cell
           key={cell.id}
@@ -409,11 +400,189 @@ b;`,
           ref={cellRefs.current.get(cell.id)}
         />
       ))}
-      <button onClick={addCell} style={{ marginTop: "1em" }}>
-        + Add Cell
-      </button>
     </div>
   );
 };
 
-export default Notebook;
+// ----------------------
+// NotebookFile interface representing a saved notebook.
+interface NotebookFile {
+  id: number;
+  title: string;
+  cells: CellData[];
+}
+
+// ----------------------
+// NotebooksManager: The top-level component that provides a sidebar file explorer
+// and a tabbed view for open notebooks.
+const NotebooksManager: React.FC = () => {
+  // State for all saved notebooks.
+  const [notebooks, setNotebooks] = useState<NotebookFile[]>([
+    {
+      id: 1,
+      title: "Example Notebook",
+      cells: [
+        {
+          id: 1,
+          code: `// JavaScript cell example:
+const a = 3;
+a + 2;`,
+          language: "javascript",
+        },
+        {
+          id: 2,
+          code: `// TypeScript cell example:
+import * as math from "https://cdn.jsdelivr.net/npm/mathjs@12.3.0/+esm";
+
+const b: number = math.sqrt(16);
+b;`,
+          language: "typescript",
+        },
+      ],
+    },
+  ]);
+  // State for open notebook IDs (the ones shown in tabs).
+  const [openNotebookIds, setOpenNotebookIds] = useState<number[]>([]);
+  // The currently active notebook (by id).
+  const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
+
+  // Sidebar: Create new notebook.
+  const createNotebook = () => {
+    const newId = notebooks.length ? notebooks[notebooks.length - 1].id + 1 : 1;
+    const newNotebook: NotebookFile = {
+      id: newId,
+      title: `Notebook ${newId}`,
+      cells: [
+        {
+          id: 1,
+          code: "// New notebook cell",
+          language: "javascript",
+        },
+      ],
+    };
+    setNotebooks([...notebooks, newNotebook]);
+  };
+
+  // Sidebar: Delete a notebook.
+  const deleteNotebook = (id: number) => {
+    setNotebooks(notebooks.filter((nb) => nb.id !== id));
+    // Also remove from open tabs.
+    setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
+    if (activeNotebookId === id) {
+      setActiveNotebookId(null);
+    }
+  };
+
+  // Open a notebook in the tab view.
+  const openNotebook = (id: number) => {
+    if (!openNotebookIds.includes(id)) {
+      setOpenNotebookIds([...openNotebookIds, id]);
+    }
+    setActiveNotebookId(id);
+  };
+
+  // Close a notebook tab.
+  const closeNotebookTab = (id: number) => {
+    setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
+    if (activeNotebookId === id) {
+      setActiveNotebookId(
+        openNotebookIds.filter((nid) => nid !== id)[0] || null
+      );
+    }
+  };
+
+  // Update a notebook's cells when changes occur in the NotebookContent.
+  const updateNotebookCells = (id: number, newCells: CellData[]) => {
+    setNotebooks(
+      notebooks.map((nb) => (nb.id === id ? { ...nb, cells: newCells } : nb))
+    );
+  };
+
+  // Get the active notebook.
+  const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
+
+  return (
+    <div className="flex h-screen">
+      {/* Sidebar File Explorer */}
+      <aside className="w-64 bg-gray-50 border-r border-gray-300 p-4 overflow-y-auto">
+        <h2 className="text-xl font-semibold mb-4">Notebooks</h2>
+        <button
+          onClick={createNotebook}
+          className="flex items-center mb-4 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          New Notebook
+        </button>
+        <ul className="space-y-2">
+          {notebooks.map((nb) => (
+            <li
+              key={nb.id}
+              className="flex justify-between items-center p-2 rounded hover:bg-gray-200 cursor-pointer"
+              onClick={() => openNotebook(nb.id)}
+            >
+              <span className="font-medium">{nb.title}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNotebook(nb.id);
+                }}
+                className="text-red-500 hover:text-red-700"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
+
+      {/* Main Content Area with Tabbed View */}
+      <main className="flex-1 p-6 bg-white overflow-auto">
+        {/* Tabs Header */}
+        <div className="flex space-x-2 border-b border-gray-300 pb-2 mb-4">
+          {openNotebookIds.map((id) => {
+            const nb = notebooks.find((n) => n.id === id);
+            if (!nb) return null;
+            return (
+              <div
+                key={id}
+                onClick={() => setActiveNotebookId(id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-t cursor-pointer ${
+                  activeNotebookId === id
+                    ? "bg-white border border-gray-300 border-b-0 shadow"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                <span>{nb.title}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeNotebookTab(id);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+        {/* Active Notebook Content */}
+        {activeNotebook ? (
+          <NotebookContent
+            key={activeNotebook.id} // key to ensure a fresh instance per notebook
+            cells={activeNotebook.cells}
+            onCellsChange={(newCells) =>
+              updateNotebookCells(activeNotebook.id, newCells)
+            }
+          />
+        ) : (
+          <div className="text-center text-gray-500">
+            No notebook open. Select one from the sidebar.
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default NotebooksManager;
