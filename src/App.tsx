@@ -628,6 +628,8 @@ async function importNotebookFromMarkdown(file: File): Promise<NotebookFile> {
       } else {
         currentCell.code += line + "\n";
       }
+    } else if (line.trim() !== "") {
+      currentCell = { id: Date.now(), code: line, language: "markdown" };
     }
   });
 
@@ -639,53 +641,79 @@ async function importNotebookFromMarkdown(file: File): Promise<NotebookFile> {
   return { id: newId, title: file.name.replace(".md", ""), cells };
 }
 
+// Function to preload Markdown notebooks from the 'notebooks' folder
+async function preloadMarkdownNotebooks(): Promise<NotebookFile[]> {
+  const files = import.meta.glob("../notebooks/*.md");
+  const notebooks: NotebookFile[] = await Promise.all(
+    Object.keys(files).map(async (key) => {
+      const module = await files[key]();
+      const response = await fetch(module.default);
+      const text = await response.text();
+      const lines = text.split("\n");
+      const cells: CellData[] = [];
+      let currentCell: CellData | null = null;
+
+      lines.forEach((line) => {
+        const match = line.match(/^<!-- (\d+) -->$/);
+        if (match) {
+          if (currentCell) {
+            cells.push(currentCell);
+          }
+          currentCell = {
+            id: parseInt(match[1]),
+            code: "",
+            language: "markdown",
+          };
+        } else if (currentCell) {
+          if (line.startsWith("```")) {
+            const lang = line.slice(3).trim();
+            currentCell.language = lang === "ts" ? "typescript" : "javascript";
+          } else if (line === "```") {
+            cells.push(currentCell);
+            currentCell = null;
+          } else {
+            currentCell.code += line + "\n";
+          }
+        } else if (line.trim() !== "") {
+          currentCell = { id: Date.now(), code: line, language: "markdown" };
+        }
+      });
+
+      if (currentCell) {
+        cells.push(currentCell);
+      }
+
+      const newId = Date.now();
+      return {
+        id: newId,
+        title: key.replace("../notebooks/", "").replace(".md", ""),
+        cells,
+      };
+    })
+  );
+  return notebooks;
+}
+
 // ----------------------
 // NotebooksManager: The top-level component that provides a sidebar file explorer
 // and a tabbed view for open notebooks.
 const NotebooksManager: React.FC = () => {
   // State for all saved notebooks.
-  const [notebooks, setNotebooks] = useState<NotebookFile[]>([
-    {
-      id: 1,
-      title: "Example Notebook",
-      cells: [
-        {
-          id: 1,
-          code: `// JavaScript cell example:
-// 'a' will be attached to sharedContext automatically.
-const a = 3;
-a + 2;`,
-          language: "javascript",
-        },
-        {
-          id: 2,
-          code: `// TypeScript cell example:
-import * as math from "https://cdn.jsdelivr.net/npm/mathjs@12.3.0/+esm";
-
-const b: number = math.sqrt(16);
-b;`,
-          language: "typescript",
-        },
-        {
-          id: 3,
-          code: `# Hello from Markdown`,
-          language: "markdown",
-        },
-        {
-          id: 4,
-          code: `// JavaScript cell example using previously declared 'a':
-a + 7;`,
-          language: "javascript",
-        },
-      ],
-    },
-  ]);
+  const [notebooks, setNotebooks] = useState<NotebookFile[]>([]);
   // State for open notebook IDs (the ones shown in tabs).
   const [openNotebookIds, setOpenNotebookIds] = useState<number[]>([]);
   // The currently active notebook (by id).
   const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
   // State for sidebar collapse.
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
+  useEffect(() => {
+    const loadNotebooks = async () => {
+      const preloadedNotebooks = await preloadMarkdownNotebooks();
+      setNotebooks(preloadedNotebooks);
+    };
+    loadNotebooks();
+  }, []);
 
   // Sidebar: Create new notebook.
   const createNotebook = () => {
