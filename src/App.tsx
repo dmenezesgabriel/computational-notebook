@@ -25,6 +25,7 @@ import { Plus, Trash2, X, PlayCircle } from "lucide-react";
 // --- tiptap imports ---
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import ReactMarkdown from "react-markdown";
 
 // ------------------------------------
 // This file contains a complete example of a simple notebook application
@@ -359,7 +360,11 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
     }
   }, [value, editor]);
 
-  return <EditorContent editor={editor} />;
+  return (
+    <div className="prose">
+      <EditorContent editor={editor} />
+    </div>
+  );
 };
 
 // ----------------------
@@ -452,10 +457,9 @@ const Cell = forwardRef<
         />
       )}
       {output && (
-        <div
-          className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm"
-          dangerouslySetInnerHTML={{ __html: output }}
-        />
+        <div className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm prose">
+          <ReactMarkdown>{output}</ReactMarkdown>
+        </div>
       )}
     </div>
   );
@@ -608,6 +612,8 @@ b;`,
   const [openNotebookIds, setOpenNotebookIds] = useState<number[]>([]);
   // The currently active notebook (by id).
   const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
+  // State for sidebar collapse.
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   // Sidebar: Create new notebook.
   const createNotebook = () => {
@@ -674,35 +680,53 @@ b;`,
   return (
     <div className="flex h-screen">
       {/* Sidebar File Explorer */}
-      <aside className="w-64 bg-gray-50 border-r border-gray-300 p-4 overflow-y-auto">
-        <h2 className="text-xl font-semibold mb-4">Notebooks</h2>
-        <button
-          onClick={createNotebook}
-          className="flex items-center mb-4 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          New Notebook
-        </button>
-        <ul className="space-y-2">
-          {notebooks.map((nb) => (
-            <li
-              key={nb.id}
-              className="flex justify-between items-center p-2 rounded hover:bg-gray-200 cursor-pointer"
-              onClick={() => openNotebook(nb.id)}
+      <aside
+        className={`${
+          isSidebarCollapsed ? "w-16" : "w-64"
+        } bg-gray-50 border-r border-gray-300 p-4 overflow-y-auto transition-width duration-300`}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">
+            {isSidebarCollapsed ? "NB" : "Notebooks"}
+          </h2>
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            {isSidebarCollapsed ? ">" : "<"}
+          </button>
+        </div>
+        {!isSidebarCollapsed && (
+          <>
+            <button
+              onClick={createNotebook}
+              className="flex items-center mb-4 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
             >
-              <span className="font-medium">{nb.title}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  deleteNotebook(nb.id);
-                }}
-                className="text-red-500 hover:text-red-700"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
+              <Plus className="w-4 h-4 mr-1" />
+              New Notebook
+            </button>
+            <ul className="space-y-2">
+              {notebooks.map((nb) => (
+                <li
+                  key={nb.id}
+                  className="flex justify-between items-center p-2 rounded hover:bg-gray-200 cursor-pointer"
+                  onClick={() => openNotebook(nb.id)}
+                >
+                  <span className="font-medium">{nb.title}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNotebook(nb.id);
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </aside>
 
       {/* Main Content Area with Tabbed View */}
