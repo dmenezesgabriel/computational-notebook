@@ -609,6 +609,11 @@ const b: number = math.sqrt(16);
 b;`,
           language: "typescript",
         },
+        {
+          id: 3,
+          code: `# Hello`,
+          language: "markdown",
+        },
       ],
     },
   ]);
