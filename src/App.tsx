@@ -585,6 +585,26 @@ interface NotebookFile {
 }
 
 // ----------------------
+// Function to export a notebook to Markdown format
+function exportNotebookToMarkdown(notebook: NotebookFile): string {
+  const markdownLines: string[] = [];
+
+  notebook.cells.forEach((cell) => {
+    markdownLines.push(`<!-- ${cell.id} -->`);
+    if (cell.language === "markdown") {
+      markdownLines.push(cell.code);
+    } else {
+      const lang = cell.language === "typescript" ? "ts" : "js";
+      markdownLines.push(`\`\`\`${lang}`);
+      markdownLines.push(cell.code);
+      markdownLines.push(`\`\`\``);
+    }
+  });
+
+  return markdownLines.join("\n");
+}
+
+// ----------------------
 // NotebooksManager: The top-level component that provides a sidebar file explorer
 // and a tabbed view for open notebooks.
 const NotebooksManager: React.FC = () => {
@@ -694,6 +714,20 @@ a + 7;`,
   // Get the active notebook.
   const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
 
+  // Function to handle exporting the active notebook
+  const handleExportNotebook = () => {
+    if (activeNotebook) {
+      const markdownContent = exportNotebookToMarkdown(activeNotebook);
+      const blob = new Blob([markdownContent], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${activeNotebook.title}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar File Explorer */}
@@ -791,13 +825,23 @@ a + 7;`,
         {/* Active Notebook Content */}
         <div className="flex-1 overflow-auto p-4">
           {activeNotebook ? (
-            <NotebookContent
-              key={activeNotebook.id}
-              cells={activeNotebook.cells}
-              onCellsChange={(newCells) =>
-                updateNotebookCells(activeNotebook.id, newCells)
-              }
-            />
+            <>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={handleExportNotebook}
+                  className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                >
+                  Export to Markdown
+                </button>
+              </div>
+              <NotebookContent
+                key={activeNotebook.id}
+                cells={activeNotebook.cells}
+                onCellsChange={(newCells) =>
+                  updateNotebookCells(activeNotebook.id, newCells)
+                }
+              />
+            </>
           ) : (
             <div className="text-center text-gray-500 mt-8">
               No notebook open. Select one from the sidebar.
