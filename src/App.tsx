@@ -28,8 +28,6 @@ import StarterKit from "@tiptap/starter-kit";
 import ReactMarkdown from "react-markdown";
 
 // ------------------------------------
-// This file contains a complete example of a simple notebook application
-// built using React and CodeMirror. It allows creating, editing, and running
 // JavaScript and TypeScript code cells. The code cells are executed in an
 // isolated environment using a sandboxed iframe.
 
@@ -377,35 +375,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 };
 
 // ----------------------
-// MarkdownEditor component using tiptap
-interface MarkdownEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-}
-
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
-  const editor = useEditor({
-    extensions: [StarterKit],
-    content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-  });
-
-  useEffect(() => {
-    if (editor) {
-      editor.commands.setContent(value);
-    }
-  }, [value, editor]);
-
-  return (
-    <div className="prose">
-      <EditorContent editor={editor} />
-    </div>
-  );
-};
-
-// ----------------------
 // Notebook cell data interface.
 interface CellData {
   id: number;
@@ -488,15 +457,11 @@ const Cell = forwardRef<
         </button>
       </div>
       <div className="px-4 py-2">
-        {cell.language === "markdown" ? (
-          <MarkdownEditor value={cell.code} onChange={handleCodeChange} />
-        ) : (
-          <CodeEditor
-            value={cell.code}
-            language={cell.language}
-            onChange={handleCodeChange}
-          />
-        )}
+        <CodeEditor
+          value={cell.code}
+          language={cell.language}
+          onChange={handleCodeChange}
+        />
       </div>
       {output && (
         <div className="border-t border-gray-300 bg-gray-100 p-4 text-sm font-mono">
