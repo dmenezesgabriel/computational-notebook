@@ -80,5 +80,5 @@ export function transformUserCode(code: string): string {
     processedLines.join("\n") + "\n" + "return (" + lastLine + ");\n";
 
   // Wrap the code in an IIFE and export it as default.
-  return `${importLines.join("\n")}\nexport default (function(){\n${bodyCode}})();\n`;
+  return `${importLines.join("\n")}\nexport default await(async function(){\n${bodyCode}})();\n`;
 }
