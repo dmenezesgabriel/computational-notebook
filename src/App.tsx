@@ -22,6 +22,10 @@ import { oneDark } from "@codemirror/theme-one-dark";
 // --- lucide-react icons ---
 import { Plus, Trash2, X, PlayCircle } from "lucide-react";
 
+// --- tiptap imports ---
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+
 // ------------------------------------
 // This file contains a complete example of a simple notebook application
 // built using React and CodeMirror. It allows creating, editing, and running
@@ -334,11 +338,36 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 };
 
 // ----------------------
+// MarkdownEditor component using tiptap
+interface MarkdownEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
+
+  return <EditorContent editor={editor} />;
+};
+
+// ----------------------
 // Notebook cell data interface.
 interface CellData {
   id: number;
   code: string;
-  language: "javascript" | "typescript";
+  language: "javascript" | "typescript" | "markdown";
 }
 
 // ----------------------
@@ -361,8 +390,12 @@ const Cell = forwardRef<
   const [output, setOutput] = useState<string>("");
 
   const handleRun = async () => {
-    const result = await runCode(cell.code, cell.language);
-    setOutput(result);
+    if (cell.language === "markdown") {
+      setOutput(cell.code);
+    } else {
+      const result = await runCode(cell.code, cell.language);
+      setOutput(result);
+    }
   };
 
   // Expose the runCell function to parent via ref.
@@ -376,7 +409,7 @@ const Cell = forwardRef<
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange(cell.id, {
-      language: e.target.value as "javascript" | "typescript",
+      language: e.target.value as "javascript" | "typescript" | "markdown",
     });
   };
 
@@ -394,6 +427,7 @@ const Cell = forwardRef<
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
+          <option value="markdown">Markdown</option>
         </select>
         <button
           onClick={handleRun}
@@ -408,11 +442,15 @@ const Cell = forwardRef<
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-      <CodeEditor
-        value={cell.code}
-        language={cell.language}
-        onChange={handleCodeChange}
-      />
+      {cell.language === "markdown" ? (
+        <MarkdownEditor value={cell.code} onChange={handleCodeChange} />
+      ) : (
+        <CodeEditor
+          value={cell.code}
+          language={cell.language}
+          onChange={handleCodeChange}
+        />
+      )}
       {output && (
         <pre className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm">
           {output}
@@ -473,6 +511,9 @@ const NotebookContent: React.FC<NotebookContentProps> = ({
   const formatAllCells = async () => {
     const formattedCells = await Promise.all(
       cells.map(async (cell) => {
+        if (cell.language === "markdown") {
+          return cell;
+        }
         try {
           const formattedCode = await formatCode(cell.code, cell.language);
           return { ...cell, code: formattedCode };

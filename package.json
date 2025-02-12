@@ -17,6 +17,8 @@
     "@codemirror/theme-one-dark": "6.1.2",
     "@codemirror/view": "6.36.2",
     "@tailwindcss/vite": "4.0.3",
+    "@tiptap/react": "2.11.5",
+    "@tiptap/starter-kit": "2.11.5",
     "@types/babel__standalone": "7.1.9",
     "codemirror": "6.0.1",
     "lucide-react": "0.475.0",
