@@ -23,8 +23,6 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import { Plus, Trash2, X, PlayCircle } from "lucide-react";
 
 // --- tiptap imports ---
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import ReactMarkdown from "react-markdown";
 
 // ------------------------------------
