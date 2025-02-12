@@ -423,12 +423,12 @@ const Cell = forwardRef<
   };
 
   return (
-    <div className="bg-white shadow rounded p-4 my-4">
-      <div className="mb-2 flex items-center space-x-2">
+    <div className="bg-[#ffffff] border border-[#e4e4e4] rounded-md my-2 overflow-hidden">
+      <div className="bg-[#f3f3f3] px-3 py-2 flex items-center space-x-2 border-b border-[#e4e4e4]">
         <select
           value={cell.language}
           onChange={handleLanguageChange}
-          className="border border-gray-300 rounded px-2 py-1"
+          className="text-sm bg-white border border-[#e4e4e4] rounded px-2 py-1 focus:outline-none focus:border-[#0066b8] focus:ring-1 focus:ring-[#0066b8]"
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
@@ -436,28 +436,32 @@ const Cell = forwardRef<
         </select>
         <button
           onClick={handleRun}
-          className="flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+          className="flex items-center justify-center text-[#1e1e1e] hover:bg-[#e4e4e4] p-1 rounded"
+          title="Run Cell"
         >
           <PlayCircle className="w-4 h-4" />
         </button>
         <button
           onClick={handleDelete}
-          className="flex items-center justify-center bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+          className="flex items-center justify-center text-[#1e1e1e] hover:bg-[#e4e4e4] p-1 rounded"
+          title="Delete Cell"
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
-      {cell.language === "markdown" ? (
-        <MarkdownEditor value={cell.code} onChange={handleCodeChange} />
-      ) : (
-        <CodeEditor
-          value={cell.code}
-          language={cell.language}
-          onChange={handleCodeChange}
-        />
-      )}
+      <div className="px-4 py-2">
+        {cell.language === "markdown" ? (
+          <MarkdownEditor value={cell.code} onChange={handleCodeChange} />
+        ) : (
+          <CodeEditor
+            value={cell.code}
+            language={cell.language}
+            onChange={handleCodeChange}
+          />
+        )}
+      </div>
       {output && (
-        <div className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm prose">
+        <div className="border-t border-[#e4e4e4] bg-[#f9f9f9] p-4 text-sm font-mono">
           <ReactMarkdown>{output}</ReactMarkdown>
         </div>
       )}
@@ -678,47 +682,51 @@ b;`,
   const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-[#f9f9f9]">
       {/* Sidebar File Explorer */}
       <aside
         className={`${
           isSidebarCollapsed ? "w-16" : "w-64"
-        } bg-gray-50 border-r border-gray-300 p-4 overflow-y-auto transition-width duration-300`}
+        } bg-[#f3f3f3] border-r border-[#e4e4e4] overflow-y-auto transition-width duration-300`}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">
-            {isSidebarCollapsed ? "NB" : "Notebooks"}
+        <div className="flex justify-between items-center p-4 border-b border-[#e4e4e4]">
+          <h2 className="text-sm font-semibold text-[#424242]">
+            {isSidebarCollapsed ? "NB" : "NOTEBOOKS"}
           </h2>
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-[#424242] hover:bg-[#e4e4e4] p-1 rounded"
           >
             {isSidebarCollapsed ? ">" : "<"}
           </button>
         </div>
         {!isSidebarCollapsed && (
           <>
-            <button
-              onClick={createNotebook}
-              className="flex items-center mb-4 px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              New Notebook
-            </button>
-            <ul className="space-y-2">
+            <div className="p-4">
+              <button
+                onClick={createNotebook}
+                className="flex items-center w-full px-3 py-2 text-sm bg-[#0066b8] text-white rounded hover:bg-[#005ba4]"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                New Notebook
+              </button>
+            </div>
+            <ul className="px-2">
               {notebooks.map((nb) => (
                 <li
                   key={nb.id}
-                  className="flex justify-between items-center p-2 rounded hover:bg-gray-200 cursor-pointer"
+                  className={`flex justify-between items-center px-2 py-1 rounded text-sm hover:bg-[#e4e4e4] cursor-pointer ${
+                    activeNotebookId === nb.id ? "bg-[#e8e8e8]" : ""
+                  }`}
                   onClick={() => openNotebook(nb.id)}
                 >
-                  <span className="font-medium">{nb.title}</span>
+                  <span className="text-[#424242]">{nb.title}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteNotebook(nb.id);
                     }}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-[#424242] hover:text-[#d32f2f] p-1 rounded opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -730,9 +738,9 @@ b;`,
       </aside>
 
       {/* Main Content Area with Tabbed View */}
-      <main className="flex-1 p-6 bg-white overflow-auto">
+      <main className="flex-1 flex flex-col bg-[#ffffff]">
         {/* Tabs Header */}
-        <div className="flex space-x-2 border-b border-gray-300 pb-2 mb-4">
+        <div className="flex space-x-px bg-[#f3f3f3] border-b border-[#e4e4e4]">
           {openNotebookIds.map((id) => {
             const nb = notebooks.find((n) => n.id === id);
             if (!nb) return null;
@@ -740,10 +748,10 @@ b;`,
               <div
                 key={id}
                 onClick={() => setActiveNotebookId(id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-t cursor-pointer ${
+                className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
                   activeNotebookId === id
-                    ? "bg-white border border-gray-300 border-b-0 shadow"
-                    : "bg-gray-100 text-gray-600"
+                    ? "bg-white text-[#424242] border-t-2 border-t-[#0066b8]"
+                    : "text-[#616161] hover:bg-[#e8e8e8]"
                 }`}
               >
                 <input
@@ -757,7 +765,7 @@ b;`,
                     e.stopPropagation();
                     closeNotebookTab(id);
                   }}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-[#424242] hover:bg-[#e4e4e4] p-1 rounded"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -766,19 +774,21 @@ b;`,
           })}
         </div>
         {/* Active Notebook Content */}
-        {activeNotebook ? (
-          <NotebookContent
-            key={activeNotebook.id} // key to ensure a fresh instance per notebook
-            cells={activeNotebook.cells}
-            onCellsChange={(newCells) =>
-              updateNotebookCells(activeNotebook.id, newCells)
-            }
-          />
-        ) : (
-          <div className="text-center text-gray-500">
-            No notebook open. Select one from the sidebar.
-          </div>
-        )}
+        <div className="flex-1 overflow-auto p-4">
+          {activeNotebook ? (
+            <NotebookContent
+              key={activeNotebook.id}
+              cells={activeNotebook.cells}
+              onCellsChange={(newCells) =>
+                updateNotebookCells(activeNotebook.id, newCells)
+              }
+            />
+          ) : (
+            <div className="text-center text-[#616161] mt-8">
+              No notebook open. Select one from the sidebar.
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
