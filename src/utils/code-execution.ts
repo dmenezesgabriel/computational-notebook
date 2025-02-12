@@ -17,8 +17,8 @@ export async function runCode(code: string, language: string): Promise<string> {
   };
 
   // Expose display and sharedContext globally so that user code can call it.
-  (window as any).display = display;
-  (window as any).sharedContext = sharedContext;
+  window.display = display;
+  window.sharedContext = sharedContext;
 
   try {
     // Optionally transform the code to capture the last expression's value and attach declarations.
@@ -68,7 +68,7 @@ export async function runCode(code: string, language: string): Promise<string> {
       // Update shared context with new exports.
       Object.keys(module).forEach((exportKey) => {
         sharedContext[exportKey] = module[exportKey];
-        (window as any)[exportKey] = module[exportKey];
+        window[exportKey] = module[exportKey];
       });
 
       // If the default export (the auto-return value) is not undefined, display it.
@@ -79,12 +79,12 @@ export async function runCode(code: string, language: string): Promise<string> {
       // Clean up the Blob URL.
       URL.revokeObjectURL(moduleUrl);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error executing code:", error);
-    logs.push(`Error: ${error.message}`);
+    logs.push(`Error: ${(error as Error).message}`);
   } finally {
     // Remove the global display function.
-    delete (window as any).display;
+    delete window.display;
   }
 
   output = logs.length ? logs.join("\n") : "Code executed successfully.";

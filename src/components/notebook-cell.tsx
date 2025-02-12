@@ -11,15 +11,10 @@ export interface CellData {
   language: "javascript" | "typescript" | "markdown";
 }
 
-// ----------------------
-// CellHandle interface to expose a runCell method.
 export interface CellHandle {
   runCell: () => Promise<void>;
 }
 
-// ----------------------
-// A single notebook cell. It shows a CodeMirror editor (our CodeEditor component),
-// a language selector, a run button, and an output area.
 export const Cell = forwardRef<
   CellHandle,
   {

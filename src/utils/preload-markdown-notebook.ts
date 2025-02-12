@@ -10,7 +10,7 @@ export async function preloadMarkdownNotebooks(): Promise<NotebookFile[]> {
   const files = import.meta.glob("../../notebooks/*.md");
   const notebooks: NotebookFile[] = await Promise.all(
     Object.keys(files).map(async (key) => {
-      const module = await files[key]();
+      const module = (await files[key]()) as { default: string };
       const response = await fetch(module.default);
       const text = await response.text();
       const lines = text.split("\n");

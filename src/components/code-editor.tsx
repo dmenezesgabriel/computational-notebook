@@ -7,7 +7,7 @@ import { useEffect, useRef } from "react";
 
 interface CodeEditorProps {
   value: string;
-  language: "javascript" | "typescript";
+  language: "javascript" | "typescript" | "markdown";
   onChange: (value: string) => void;
 }
 
