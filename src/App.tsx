@@ -604,6 +604,41 @@ function exportNotebookToMarkdown(notebook: NotebookFile): string {
   return markdownLines.join("\n");
 }
 
+// Function to import a notebook from a Markdown file
+async function importNotebookFromMarkdown(file: File): Promise<NotebookFile> {
+  const text = await file.text();
+  const lines = text.split("\n");
+  const cells: CellData[] = [];
+  let currentCell: CellData | null = null;
+
+  lines.forEach((line) => {
+    const match = line.match(/^<!-- (\d+) -->$/);
+    if (match) {
+      if (currentCell) {
+        cells.push(currentCell);
+      }
+      currentCell = { id: parseInt(match[1]), code: "", language: "markdown" };
+    } else if (currentCell) {
+      if (line.startsWith("```")) {
+        const lang = line.slice(3).trim();
+        currentCell.language = lang === "ts" ? "typescript" : "javascript";
+      } else if (line === "```") {
+        cells.push(currentCell);
+        currentCell = null;
+      } else {
+        currentCell.code += line + "\n";
+      }
+    }
+  });
+
+  if (currentCell) {
+    cells.push(currentCell);
+  }
+
+  const newId = Date.now();
+  return { id: newId, title: file.name.replace(".md", ""), cells };
+}
+
 // ----------------------
 // NotebooksManager: The top-level component that provides a sidebar file explorer
 // and a tabbed view for open notebooks.
@@ -728,6 +763,18 @@ a + 7;`,
     }
   };
 
+  // Function to handle importing a notebook
+  const handleImportNotebook = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const notebook = await importNotebookFromMarkdown(file);
+      setNotebooks([...notebooks, notebook]);
+      openNotebook(notebook.id);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar File Explorer */}
@@ -757,6 +804,22 @@ a + 7;`,
                 <Plus className="w-4 h-4 mr-1" />
                 New Notebook
               </button>
+              <div className="mt-2">
+                <label
+                  htmlFor="import-notebook"
+                  className="flex items-center w-full px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Import Notebook
+                </label>
+                <input
+                  id="import-notebook"
+                  type="file"
+                  accept=".md"
+                  onChange={handleImportNotebook}
+                  className="hidden"
+                />
+              </div>
             </div>
             <ul className="px-2">
               {notebooks.map((nb) => (
