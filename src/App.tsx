@@ -54,12 +54,16 @@ async function runInSandbox(code: string): Promise<string> {
   };
   console.error = (...args: any[]) => {
     logs.push(
-      `ERROR: ${args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")}`
+      `ERROR: ${args
+        .map((a) => (typeof a === "object" ? JSON.stringify(a) : a))
+        .join(" ")}`
     );
   };
   console.warn = (...args: any[]) => {
     logs.push(
-      `WARNING: ${args.map((a) => (typeof a === "object" ? JSON.stringify(a) : a)).join(" ")}`
+      `WARNING: ${args
+        .map((a) => (typeof a === "object" ? JSON.stringify(a) : a))
+        .join(" ")}`
     );
   };
 
@@ -92,8 +96,6 @@ async function runTypeScript(code: string): Promise<string> {
 }
 
 // ----------------------
-// Execute the provided code (JavaScript or TypeScript) in a sandboxed iframe.
-// The language parameter specifies the language of the code.
 // Helper: Returns true if a line appears to be a declaration rather than an expression.
 function isDeclaration(line: string): boolean {
   return /^\s*(const|let|var|function|class)\s+/.test(line);
@@ -101,7 +103,9 @@ function isDeclaration(line: string): boolean {
 
 // ----------------------
 // Transforms user code to automatically return the value of the last expression,
-// similar to a Jupyter Notebook.
+// similar to a Jupyter Notebook. In addition, this version detects top-level declarations
+// (using a simple regex) and automatically appends an assignment to the shared context.
+// This allows variables declared in one cell to be available in later cells.
 // It separates top-level import statements from the rest and, if the last non-import line
 // is an expression (and not a declaration, a call to display, or a lone closing brace),
 // wraps it in an IIFE that returns its value.
@@ -119,35 +123,52 @@ function transformUserCode(code: string): string {
     }
   }
 
+  // Process non-import lines to automatically attach declared variables to sharedContext.
+  const declarationRegex =
+    /^\s*(const|let|var|function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)/;
+  const processedLines: string[] = [];
+  for (let i = 0; i < nonImportLines.length; i++) {
+    const line = nonImportLines[i];
+    processedLines.push(line);
+    const match = line.match(declarationRegex);
+    if (match) {
+      const varName = match[2];
+      // Avoid adding duplicate assignment if the line already mentions sharedContext.
+      if (!line.includes("sharedContext.")) {
+        processedLines.push(`sharedContext.${varName} = ${varName};`);
+      }
+    }
+  }
+
   // Remove trailing blank lines.
   while (
-    nonImportLines.length > 0 &&
-    nonImportLines[nonImportLines.length - 1].trim() === ""
+    processedLines.length > 0 &&
+    processedLines[processedLines.length - 1].trim() === ""
   ) {
-    nonImportLines.pop();
+    processedLines.pop();
   }
 
   // If there is no non-import code, return the original code.
-  if (nonImportLines.length === 0) {
+  if (processedLines.length === 0) {
     return code;
   }
 
   // Check the last non-empty line.
-  let lastLine = nonImportLines[nonImportLines.length - 1].trim();
+  let lastLine = processedLines[processedLines.length - 1].trim();
 
   // If the last line starts with "display(", assume the user is handling output.
   if (lastLine.startsWith("display(")) {
-    return code;
+    return `${importLines.join("\n")}\n${processedLines.join("\n")}`;
   }
 
   // If the last line is a declaration, don’t wrap it.
   if (isDeclaration(lastLine)) {
-    return code;
+    return `${importLines.join("\n")}\n${processedLines.join("\n")}`;
   }
 
   // If the last line starts with a closing brace (or is just "}") then do not wrap it.
   if (lastLine.startsWith("}")) {
-    return code;
+    return `${importLines.join("\n")}\n${processedLines.join("\n")}`;
   }
 
   // Remove a trailing semicolon from the last line if present.
@@ -155,19 +176,18 @@ function transformUserCode(code: string): string {
     lastLine = lastLine.slice(0, -1);
   }
 
-  // Otherwise, treat the last line as an expression:
-  // Remove it from the non-import code.
-  const bodyLines = nonImportLines.slice(0, nonImportLines.length - 1);
-  // Create an IIFE that runs the previous code and returns the value of the last expression.
-  const bodyCode = bodyLines.join("\n") + "\n" + "return (" + lastLine + ");\n";
+  // Remove the last non-import line (which is treated as an expression).
+  processedLines.pop();
+  const bodyCode =
+    processedLines.join("\n") + "\n" + "return (" + lastLine + ");\n";
 
-  // Reassemble the transformed code:
-  return `${importLines.join("\n")}
-export default (function(){
-${bodyCode}
-})();
-`;
+  // Wrap the code in an IIFE and export it as default.
+  return `${importLines.join("\n")}\nexport default (function(){\n${bodyCode}})();\n`;
 }
+
+// ----------------------
+// Shared context for all cells
+const sharedContext: { [key: string]: any } = {};
 
 // ----------------------
 // Executes the provided code (JavaScript or TypeScript). If the code does
@@ -188,11 +208,12 @@ async function runCode(code: string, language: string): Promise<string> {
     console.log(...args);
   };
 
-  // Expose display globally so that user code can call it.
+  // Expose display and sharedContext globally so that user code can call it.
   (window as any).display = display;
+  (window as any).sharedContext = sharedContext;
 
   try {
-    // Optionally transform the code to capture the last expression's value.
+    // Optionally transform the code to capture the last expression's value and attach declarations.
     const trimmedCode = code.trim();
     const lastLine = trimmedCode.split("\n").pop()?.trim();
     let finalCode = code;
@@ -200,10 +221,26 @@ async function runCode(code: string, language: string): Promise<string> {
       finalCode = transformUserCode(code);
     }
 
-    let transpiledCode = finalCode;
+    // Inject shared context into the code.
+    let contextCode = "";
+    const contextKeys = Object.keys(sharedContext);
+    if (contextKeys.length > 0) {
+      contextCode = `const sharedContext = window.sharedContext;\n`;
+      for (const key of contextKeys) {
+        if (key !== "default") {
+          contextCode += `const ${key} = sharedContext["${key}"];\n`;
+        }
+      }
+    }
+
+    const fullCode = `${contextCode}${finalCode}`;
+
+    console.log("Executing code:\n", fullCode); // Debugging output
+
+    let transpiledCode = fullCode;
     if (language === "typescript") {
       // Transpile TypeScript to ES module code.
-      const result = ts.transpileModule(finalCode, {
+      const result = ts.transpileModule(fullCode, {
         compilerOptions: {
           module: ts.ModuleKind.ESNext, // output as ES module
           target: ts.ScriptTarget.ES2015,
@@ -220,8 +257,9 @@ async function runCode(code: string, language: string): Promise<string> {
       // Dynamically import the module.
       const module = await import(/* @vite-ignore */ moduleUrl);
 
-      // Expose every export from the cell globally (for cross-cell usage).
+      // Update shared context with new exports.
       Object.keys(module).forEach((exportKey) => {
+        sharedContext[exportKey] = module[exportKey];
         (window as any)[exportKey] = module[exportKey];
       });
 
@@ -423,12 +461,12 @@ const Cell = forwardRef<
   };
 
   return (
-    <div className="bg-[#ffffff] border border-[#e4e4e4] rounded-md my-2 overflow-hidden">
-      <div className="bg-[#f3f3f3] px-3 py-2 flex items-center space-x-2 border-b border-[#e4e4e4]">
+    <div className="bg-white border border-gray-300 rounded-md my-2 overflow-hidden">
+      <div className="bg-gray-100 px-3 py-2 flex items-center space-x-2 border-b border-gray-300">
         <select
           value={cell.language}
           onChange={handleLanguageChange}
-          className="text-sm bg-white border border-[#e4e4e4] rounded px-2 py-1 focus:outline-none focus:border-[#0066b8] focus:ring-1 focus:ring-[#0066b8]"
+          className="text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
@@ -436,14 +474,14 @@ const Cell = forwardRef<
         </select>
         <button
           onClick={handleRun}
-          className="flex items-center justify-center text-[#1e1e1e] hover:bg-[#e4e4e4] p-1 rounded"
+          className="flex items-center justify-center text-gray-800 hover:bg-gray-300 p-1 rounded"
           title="Run Cell"
         >
           <PlayCircle className="w-4 h-4" />
         </button>
         <button
           onClick={handleDelete}
-          className="flex items-center justify-center text-[#1e1e1e] hover:bg-[#e4e4e4] p-1 rounded"
+          className="flex items-center justify-center text-gray-800 hover:bg-gray-300 p-1 rounded"
           title="Delete Cell"
         >
           <Trash2 className="w-4 h-4" />
@@ -461,7 +499,7 @@ const Cell = forwardRef<
         )}
       </div>
       {output && (
-        <div className="border-t border-[#e4e4e4] bg-[#f9f9f9] p-4 text-sm font-mono">
+        <div className="border-t border-gray-300 bg-gray-100 p-4 text-sm font-mono">
           <ReactMarkdown>{output}</ReactMarkdown>
         </div>
       )}
@@ -596,6 +634,7 @@ const NotebooksManager: React.FC = () => {
         {
           id: 1,
           code: `// JavaScript cell example:
+// 'a' will be attached to sharedContext automatically.
 const a = 3;
 a + 2;`,
           language: "javascript",
@@ -611,8 +650,14 @@ b;`,
         },
         {
           id: 3,
-          code: `# Hello`,
+          code: `# Hello from Markdown`,
           language: "markdown",
+        },
+        {
+          id: 4,
+          code: `// JavaScript cell example using previously declared 'a':
+a + 7;`,
+          language: "javascript",
         },
       ],
     },
@@ -687,20 +732,20 @@ b;`,
   const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
 
   return (
-    <div className="flex h-screen bg-[#f9f9f9]">
+    <div className="flex h-screen bg-gray-100">
       {/* Sidebar File Explorer */}
       <aside
         className={`${
           isSidebarCollapsed ? "w-16" : "w-64"
-        } bg-[#f3f3f3] border-r border-[#e4e4e4] overflow-y-auto transition-width duration-300`}
+        } bg-gray-100 border-r border-gray-300 overflow-y-auto transition-width duration-300`}
       >
-        <div className="flex justify-between items-center p-4 border-b border-[#e4e4e4]">
-          <h2 className="text-sm font-semibold text-[#424242]">
+        <div className="flex justify-between items-center p-4 border-b border-gray-300">
+          <h2 className="text-sm font-semibold text-gray-700">
             {isSidebarCollapsed ? "NB" : "NOTEBOOKS"}
           </h2>
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="text-[#424242] hover:bg-[#e4e4e4] p-1 rounded"
+            className="text-gray-700 hover:bg-gray-300 p-1 rounded"
           >
             {isSidebarCollapsed ? ">" : "<"}
           </button>
@@ -710,7 +755,7 @@ b;`,
             <div className="p-4">
               <button
                 onClick={createNotebook}
-                className="flex items-center w-full px-3 py-2 text-sm bg-[#0066b8] text-white rounded hover:bg-[#005ba4]"
+                className="flex items-center w-full px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4 mr-1" />
                 New Notebook
@@ -720,18 +765,18 @@ b;`,
               {notebooks.map((nb) => (
                 <li
                   key={nb.id}
-                  className={`flex justify-between items-center px-2 py-1 rounded text-sm hover:bg-[#e4e4e4] cursor-pointer ${
-                    activeNotebookId === nb.id ? "bg-[#e8e8e8]" : ""
+                  className={`flex justify-between items-center px-2 py-1 rounded text-sm hover:bg-gray-300 cursor-pointer ${
+                    activeNotebookId === nb.id ? "bg-gray-200" : ""
                   }`}
                   onClick={() => openNotebook(nb.id)}
                 >
-                  <span className="text-[#424242]">{nb.title}</span>
+                  <span className="text-gray-700">{nb.title}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteNotebook(nb.id);
                     }}
-                    className="text-[#424242] hover:text-[#d32f2f] p-1 rounded opacity-0 group-hover:opacity-100"
+                    className="text-gray-700 hover:text-red-600 p-1 rounded opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -743,9 +788,9 @@ b;`,
       </aside>
 
       {/* Main Content Area with Tabbed View */}
-      <main className="flex-1 flex flex-col bg-[#ffffff]">
+      <main className="flex-1 flex flex-col bg-white">
         {/* Tabs Header */}
-        <div className="flex space-x-px bg-[#f3f3f3] border-b border-[#e4e4e4]">
+        <div className="flex space-x-px bg-gray-100 border-b border-gray-300">
           {openNotebookIds.map((id) => {
             const nb = notebooks.find((n) => n.id === id);
             if (!nb) return null;
@@ -755,8 +800,8 @@ b;`,
                 onClick={() => setActiveNotebookId(id)}
                 className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
                   activeNotebookId === id
-                    ? "bg-white text-[#424242] border-t-2 border-t-[#0066b8]"
-                    : "text-[#616161] hover:bg-[#e8e8e8]"
+                    ? "bg-white text-gray-700 border-t-2 border-t-blue-500"
+                    : "text-gray-500 hover:bg-gray-200"
                 }`}
               >
                 <input
@@ -770,7 +815,7 @@ b;`,
                     e.stopPropagation();
                     closeNotebookTab(id);
                   }}
-                  className="text-[#424242] hover:bg-[#e4e4e4] p-1 rounded"
+                  className="text-gray-700 hover:bg-gray-300 p-1 rounded"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -789,7 +834,7 @@ b;`,
               }
             />
           ) : (
-            <div className="text-center text-[#616161] mt-8">
+            <div className="text-center text-gray-500 mt-8">
               No notebook open. Select one from the sidebar.
             </div>
           )}
