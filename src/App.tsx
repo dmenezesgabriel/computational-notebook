@@ -452,9 +452,10 @@ const Cell = forwardRef<
         />
       )}
       {output && (
-        <pre className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm">
-          {output}
-        </pre>
+        <div
+          className="mt-3 bg-gray-100 p-3 rounded whitespace-pre-wrap text-sm"
+          dangerouslySetInnerHTML={{ __html: output }}
+        />
       )}
     </div>
   );
