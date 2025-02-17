@@ -3,7 +3,7 @@ import type { CellData } from "./notebook-cell";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
 
 interface NotebookFile {
@@ -22,10 +22,43 @@ export const NotebooksManager: React.FC = () => {
   // State for sidebar collapse.
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
+  // Function to encode notebook data to URL
+  const encodeNotebookToURL = (notebook: NotebookFile): string => {
+    const notebookString = JSON.stringify(notebook);
+    const encodedNotebook = btoa(encodeURIComponent(notebookString));
+    return `${window.location.origin}${
+      window.location.pathname
+    }?notebook=${encodedNotebook}`;
+  };
+
+  // Function to decode notebook data from URL
+  const decodeNotebookFromURL = (): NotebookFile | null => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedNotebook = urlParams.get("notebook");
+    if (encodedNotebook) {
+      try {
+        const decodedNotebookString = decodeURIComponent(atob(encodedNotebook));
+        const notebook = JSON.parse(decodedNotebookString);
+        return notebook;
+      } catch (error) {
+        console.error("Error decoding notebook from URL:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     const loadNotebooks = async () => {
       const preloadedNotebooks = await preloadMarkdownNotebooks();
       setNotebooks(preloadedNotebooks);
+
+      // Check for notebook data in URL
+      const urlNotebook = decodeNotebookFromURL();
+      if (urlNotebook) {
+        setNotebooks((prevNotebooks) => [...prevNotebooks, urlNotebook]);
+        openNotebook(urlNotebook.id);
+      }
     };
     loadNotebooks();
   }, []);
@@ -115,6 +148,20 @@ export const NotebooksManager: React.FC = () => {
       const notebook = await importNotebookFromMarkdown(file);
       setNotebooks([...notebooks, notebook]);
       openNotebook(notebook.id);
+    }
+  };
+
+  const handleShareNotebook = () => {
+    if (activeNotebook) {
+      const shareableURL = encodeNotebookToURL(activeNotebook);
+      navigator.clipboard
+        .writeText(shareableURL)
+        .then(() => {
+          alert("Notebook URL copied to clipboard!");
+        })
+        .catch((err) => {
+          console.error("Failed to copy: ", err);
+        });
     }
   };
 
@@ -232,11 +279,19 @@ export const NotebooksManager: React.FC = () => {
         <div className="flex-1 overflow-auto p-4">
           {activeNotebook ? (
             <>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end mb-4 space-x-2">
+                <button
+                  onClick={handleShareNotebook}
+                  className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  Share Notebook
+                </button>
                 <button
                   onClick={handleExportNotebook}
                   className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
                 >
+                  <File className="w-4 h-4 mr-1" />
                   Export to Markdown
                 </button>
               </div>
