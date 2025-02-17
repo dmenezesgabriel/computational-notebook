@@ -8,6 +8,10 @@ export async function formatCode(
   language: string
 ): Promise<string> {
   const parser = language === "typescript" ? "typescript" : "babel";
-  const plugins = [parserTypescript, parserBabel, prettierPluginEstree];
+  const plugins = [
+    parserTypescript,
+    parserBabel,
+    prettierPluginEstree,
+  ] as unknown as string[];
   return prettier.format(code, { parser, plugins });
 }
