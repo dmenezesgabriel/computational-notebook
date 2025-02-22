@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useReducer } from "react";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
@@ -6,10 +6,14 @@ import { Plus, Trash2, X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
 import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
 import type { CellData, NotebookFile } from "../types";
+import {
+  NotebookActions,
+  notebooksReducer,
+} from "../reducers/notebook/reducer";
 
 export function NotebooksManager() {
   // State for all saved notebooks.
-  const [notebooks, setNotebooks] = useState<NotebookFile[]>([]);
+  const [notebooks, dispatch] = useReducer(notebooksReducer, []);
   // State for open notebook IDs (the ones shown in tabs).
   const [openNotebookIds, setOpenNotebookIds] = useState<number[]>([]);
   // The currently active notebook (by id).
@@ -20,12 +24,15 @@ export function NotebooksManager() {
   useEffect(() => {
     const loadNotebooks = async () => {
       const preloadedNotebooks = await preloadMarkdownNotebooks();
-      setNotebooks(preloadedNotebooks);
+      dispatch({
+        type: NotebookActions.SET_NOTEBOOKS,
+        payload: preloadedNotebooks,
+      });
 
       // Check for notebook data in URL
       const urlNotebook = decodeNotebookFromURL();
       if (urlNotebook) {
-        setNotebooks((prevNotebooks) => [...prevNotebooks, urlNotebook]);
+        dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: urlNotebook });
         openNotebook(urlNotebook.id);
       }
     };
@@ -46,12 +53,12 @@ export function NotebooksManager() {
         },
       ],
     };
-    setNotebooks([...notebooks, newNotebook]);
+    dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: newNotebook });
   };
 
   // Sidebar: Delete a notebook.
   const deleteNotebook = (id: number) => {
-    setNotebooks(notebooks.filter((nb) => nb.id !== id));
+    dispatch({ type: NotebookActions.DELETE_NOTEBOOK, payload: id });
     // Also remove from open tabs.
     setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
     if (activeNotebookId === id) {
@@ -79,16 +86,18 @@ export function NotebooksManager() {
 
   // Update a notebook's cells when changes occur in the NotebookContent.
   const updateNotebookCells = (id: number, newCells: CellData[]) => {
-    setNotebooks(
-      notebooks.map((nb) => (nb.id === id ? { ...nb, cells: newCells } : nb))
-    );
+    dispatch({
+      type: NotebookActions.UPDATE_NOTEBOOK,
+      payload: { id: id, cells: newCells },
+    });
   };
 
   // Update a notebook's title.
   const updateNotebookTitle = (id: number, newTitle: string) => {
-    setNotebooks(
-      notebooks.map((nb) => (nb.id === id ? { ...nb, title: newTitle } : nb))
-    );
+    dispatch({
+      type: NotebookActions.UPDATE_NOTEBOOK,
+      payload: { id: id, title: newTitle },
+    });
   };
 
   // Get the active notebook.
@@ -115,7 +124,7 @@ export function NotebooksManager() {
     const file = event.target.files?.[0];
     if (file) {
       const notebook = await importNotebookFromMarkdown(file);
-      setNotebooks([...notebooks, notebook]);
+      dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: notebook });
       openNotebook(notebook.id);
     }
   };
