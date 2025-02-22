@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
-import type { CellData } from "./notebook-cell";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
 import { Plus, Trash2, X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
-
-interface NotebookFile {
-  id: number;
-  title: string;
-  cells: CellData[];
-}
+import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
+import type { CellData, NotebookFile } from "../types";
 
 export const NotebooksManager: React.FC = () => {
   // State for all saved notebooks.
@@ -21,32 +16,6 @@ export const NotebooksManager: React.FC = () => {
   const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
   // State for sidebar collapse.
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
-
-  // Function to encode notebook data to URL
-  const encodeNotebookToURL = (notebook: NotebookFile): string => {
-    const notebookString = JSON.stringify(notebook);
-    const encodedNotebook = btoa(encodeURIComponent(notebookString));
-    return `${window.location.origin}${
-      window.location.pathname
-    }?notebook=${encodedNotebook}`;
-  };
-
-  // Function to decode notebook data from URL
-  const decodeNotebookFromURL = (): NotebookFile | null => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const encodedNotebook = urlParams.get("notebook");
-    if (encodedNotebook) {
-      try {
-        const decodedNotebookString = decodeURIComponent(atob(encodedNotebook));
-        const notebook = JSON.parse(decodedNotebookString);
-        return notebook;
-      } catch (error) {
-        console.error("Error decoding notebook from URL:", error);
-        return null;
-      }
-    }
-    return null;
-  };
 
   useEffect(() => {
     const loadNotebooks = async () => {

@@ -1,8 +1,9 @@
 import { useRef } from "react";
-import { Cell, type CellData, type CellHandle } from "./notebook-cell";
+import { Cell } from "./notebook-cell";
 import React from "react";
 import { formatCode } from "../utils/code-formatting";
 import { PlayCircle, Plus } from "lucide-react";
+import type { CellData, CellHandle } from "../types";
 
 export interface NotebookContentProps {
   cells: CellData[];

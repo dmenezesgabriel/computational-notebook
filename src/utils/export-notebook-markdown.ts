@@ -1,10 +1,4 @@
-import type { CellData } from "../components/notebook-cell";
-
-interface NotebookFile {
-  id: number;
-  title: string;
-  cells: CellData[];
-}
+import type { NotebookFile } from "../types";
 
 export function exportNotebookToMarkdown(notebook: NotebookFile): string {
   const markdownLines: string[] = [];

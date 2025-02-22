@@ -4,16 +4,7 @@ import { runCode } from "../utils/code-execution";
 import { PlayCircle, Trash2 } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
-
-export interface CellData {
-  id: number;
-  code: string;
-  language: "javascript" | "typescript" | "markdown";
-}
-
-export interface CellHandle {
-  runCell: () => Promise<void>;
-}
+import type { CellData, CellHandle } from "../types";
 
 export const Cell = forwardRef<
   CellHandle,

@@ -1,10 +1,4 @@
-import type { CellData } from "../components/notebook-cell";
-
-interface NotebookFile {
-  id: number;
-  title: string;
-  cells: CellData[];
-}
+import type { CellData, NotebookFile } from "../types";
 
 export async function importNotebookFromMarkdown(
   file: File

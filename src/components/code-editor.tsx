@@ -59,6 +59,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   // Update editor content if the external value changes.
   useEffect(() => {
     const view = editorViewRef.current;
+
     if (view) {
       const currentValue = view.state.doc.toString();
       if (currentValue !== value) {
@@ -77,6 +78,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         language === "javascript"
           ? javascript()
           : javascript({ typescript: true });
+
       view.dispatch({
         effects: languageCompartment.current.reconfigure(newExtension),
       });
