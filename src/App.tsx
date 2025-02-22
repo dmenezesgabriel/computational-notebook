@@ -1,5 +1,14 @@
 import "./index.css";
 
 import { NotebooksManager } from "./components/notebook-manager";
+import { NotebookProvider } from "./contexts/notebook-context";
 
-export default NotebooksManager;
+function App() {
+  return (
+    <NotebookProvider>
+      <NotebooksManager />
+    </NotebookProvider>
+  );
+}
+
+export default App;

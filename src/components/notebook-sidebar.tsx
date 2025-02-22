@@ -1,43 +1,41 @@
 import React from "react";
 import { Plus, Trash2 } from "lucide-react";
-import type { NotebookFile } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
+import { useNotebook } from "../contexts/notebook-context";
 
 interface NotebookSidebarProps {
-  notebooks: NotebookFile[];
-  activeNotebookId: string | null;
   isSidebarCollapsed: boolean;
-  onCreateNotebook: (notebook: NotebookFile) => void;
-  onDeleteNotebook: (id: string) => void;
-  onOpenNotebook: (id: string) => void;
   onCollapseSidebar: (collapsed: boolean) => void;
 }
 
 export function NotebookSidebar({
-  notebooks,
-  activeNotebookId,
   isSidebarCollapsed,
-  onCreateNotebook,
-  onDeleteNotebook,
-  onOpenNotebook,
   onCollapseSidebar,
 }: NotebookSidebarProps) {
-  const createNotebook = () => {
+  const {
+    notebooks,
+    activeNotebookId,
+    createNotebook,
+    deleteNotebook,
+    openNotebook,
+  } = useNotebook();
+
+  const handleCreateNotebook = () => {
     const newId = uuidv4();
     console.log("Creating new notebook with id: ", newId);
-    const newNotebook: NotebookFile = {
+    const newNotebook = {
       id: newId,
       title: `Notebook ${newId}`,
       cells: [
         {
           id: 1,
           code: "// New notebook cell",
-          language: "javascript",
+          language: "javascript" as const,
         },
       ],
     };
-    onCreateNotebook(newNotebook);
+    createNotebook(newNotebook);
   };
 
   const handleImportNotebook = async (
@@ -46,8 +44,8 @@ export function NotebookSidebar({
     const file = event.target.files?.[0];
     if (file) {
       const notebook = await importNotebookFromMarkdown(file);
-      onCreateNotebook(notebook);
-      onOpenNotebook(notebook.id);
+      createNotebook(notebook);
+      openNotebook(notebook.id);
     }
   };
 
@@ -72,7 +70,7 @@ export function NotebookSidebar({
         <>
           <div className="p-4">
             <button
-              onClick={createNotebook}
+              onClick={handleCreateNotebook}
               className="flex items-center w-full px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -102,14 +100,14 @@ export function NotebookSidebar({
                 className={`px-2 py-1 rounded text-sm hover:bg-gray-300 cursor-pointer ${
                   activeNotebookId === nb.id ? "bg-gray-200" : ""
                 }`}
-                onClick={() => onOpenNotebook(nb.id)}
+                onClick={() => openNotebook(nb.id)}
               >
                 <div className="group flex justify-between items-center">
                   <span className="text-gray-700">{nb.title}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteNotebook(nb.id);
+                      deleteNotebook(nb.id);
                     }}
                     className="text-gray-700 hover:text-red-600 p-1 rounded opacity-0 group-hover:opacity-100"
                   >

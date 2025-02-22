@@ -1,87 +1,51 @@
-import { useEffect, useState, useReducer, useCallback } from "react";
-import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
-import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
+import { useEffect, useState, useRef } from "react";
 import { X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
 import { NotebookSidebar } from "./notebook-sidebar";
-import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
-import type { CellData } from "../types";
-import { notebooksReducer } from "../reducers/notebook/reducer";
-import {
-  addNotebookAction,
-  deleteNotebookAction,
-  setNotebooksAction,
-  updateNotebookCellsAction,
-  updateNotebookTitleAction,
-} from "../reducers/notebook/actions";
-import { produce } from "immer";
+import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
+import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
+import { decodeNotebookFromURL } from "../utils/notebook";
+import { useNotebook } from "../contexts/notebook-context";
+import { encodeNotebookToURL } from "../utils/notebook";
 
 export function NotebooksManager() {
-  const [notebooks, dispatch] = useReducer(notebooksReducer, []);
-  const [openNotebookIds, setOpenNotebookIds] = useState<string[]>([]);
-  const [activeNotebookId, setActiveNotebookId] = useState<string | null>(null);
+  const isInitialized = useRef(false);
+  const {
+    notebooks,
+    openNotebookIds,
+    activeNotebookId,
+    activeNotebook,
+    setActiveNotebookId,
+    createNotebook,
+    closeNotebookTab,
+    updateNotebookCells,
+    updateNotebookTitle,
+    openNotebook,
+  } = useNotebook();
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
-
-  const openNotebook = useCallback((id: string) => {
-    setOpenNotebookIds((state) =>
-      produce(state, (draft) => {
-        if (!draft.includes(id)) {
-          draft.push(id);
-        }
-      })
-    );
-
-    setActiveNotebookId(id);
-  }, []);
 
   useEffect(() => {
     const loadNotebooks = async () => {
-      const preloadedNotebooks = await preloadMarkdownNotebooks();
-      dispatch(setNotebooksAction(preloadedNotebooks));
+      if (!isInitialized.current) {
+        const preloadedNotebooks = await preloadMarkdownNotebooks();
+        preloadedNotebooks.forEach((notebook) => {
+          console.log(notebook);
+          createNotebook(notebook);
+        });
+      }
 
       const urlNotebook = decodeNotebookFromURL();
       if (urlNotebook) {
-        dispatch(addNotebookAction(urlNotebook));
+        createNotebook(urlNotebook);
         openNotebook(urlNotebook.id);
       }
     };
+
     loadNotebooks();
-  }, [openNotebook]);
+    isInitialized.current = true;
+  }, [createNotebook, openNotebook]);
 
-  // Sidebar: Delete a notebook.
-  const deleteNotebook = (id: string) => {
-    dispatch(deleteNotebookAction(id));
-    // Also remove from open tabs.
-    setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
-    if (activeNotebookId === id) {
-      setActiveNotebookId(null);
-    }
-  };
-
-  // Close a notebook tab.
-  const closeNotebookTab = (id: string) => {
-    setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
-    if (activeNotebookId === id) {
-      setActiveNotebookId(
-        openNotebookIds.filter((nid) => nid !== id)[0] || null
-      );
-    }
-  };
-
-  // Update a notebook's cells when changes occur in the NotebookContent.
-  const updateNotebookCells = (id: string, newCells: CellData[]) => {
-    dispatch(updateNotebookCellsAction({ id, cells: newCells }));
-  };
-
-  // Update a notebook's title.
-  const updateNotebookTitle = (id: string, newTitle: string) => {
-    dispatch(updateNotebookTitleAction({ id, title: newTitle }));
-  };
-
-  // Get the active notebook.
-  const activeNotebook = notebooks.find((nb) => nb.id === activeNotebookId);
-
-  // Function to handle exporting the active notebook
   const handleExportNotebook = () => {
     if (activeNotebook) {
       const markdownContent = exportNotebookToMarkdown(activeNotebook);
@@ -112,12 +76,7 @@ export function NotebooksManager() {
   return (
     <div className="flex h-screen bg-gray-100">
       <NotebookSidebar
-        notebooks={notebooks}
-        activeNotebookId={activeNotebookId}
         isSidebarCollapsed={isSidebarCollapsed}
-        onCreateNotebook={(notebook) => dispatch(addNotebookAction(notebook))}
-        onDeleteNotebook={deleteNotebook}
-        onOpenNotebook={openNotebook}
         onCollapseSidebar={setIsSidebarCollapsed}
       />
 
