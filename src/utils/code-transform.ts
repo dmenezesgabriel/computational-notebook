@@ -24,19 +24,27 @@ export function transformUserCode(code: string): string {
   // Process non-import lines to automatically attach declared variables to sharedContext.
   const declarationRegex =
     /^\s*(const|let|var|function|class)\s+([a-zA-Z_$][0-9a-zA-Z_$]*)/;
+
   const processedLines: string[] = [];
+  const sharedContextAssignment: string[] = [];
+
   for (let i = 0; i < nonImportLines.length; i++) {
     const line = nonImportLines[i];
     processedLines.push(line);
+
     const match = line.match(declarationRegex);
+
     if (match) {
       const varName = match[2];
       // Avoid adding duplicate assignment if the line already mentions sharedContext.
       if (!line.includes("sharedContext.")) {
-        processedLines.push(`sharedContext.${varName} = ${varName};`);
+        sharedContextAssignment.push(`sharedContext.${varName} = ${varName};`);
       }
     }
   }
+
+  processedLines.push(...sharedContextAssignment);
+  console.log(processedLines);
 
   // Remove trailing blank lines.
   while (

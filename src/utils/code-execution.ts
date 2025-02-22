@@ -4,6 +4,8 @@ import { transformUserCode } from "./code-transform";
 const sharedContext: { [key: string]: any } = {};
 
 export async function runCode(code: string, language: string): Promise<string> {
+  console.log(code);
+
   let output = "";
   const logs: string[] = [];
 
@@ -28,6 +30,8 @@ export async function runCode(code: string, language: string): Promise<string> {
     if (lastLine && !lastLine.startsWith("display(")) {
       finalCode = transformUserCode(code);
     }
+
+    console.log(finalCode);
 
     // Inject shared context into the code.
     let contextCode = "";
