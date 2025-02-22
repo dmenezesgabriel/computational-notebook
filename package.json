@@ -23,6 +23,7 @@
     "@tiptap/starter-kit": "2.11.5",
     "@types/babel__standalone": "7.1.9",
     "codemirror": "6.0.1",
+    "immer": "10.1.1",
     "lucide-react": "0.475.0",
     "prettier": "3.5.0",
     "react": "^18.3.1",

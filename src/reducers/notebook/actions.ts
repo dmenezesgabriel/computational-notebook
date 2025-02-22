@@ -10,27 +10,27 @@ export enum NotebookActions {
 
 export interface AddNotebookAction {
   type: NotebookActions.ADD_NOTEBOOK;
-  payload: NotebookFile;
+  payload: { notebook: NotebookFile };
 }
 
 export interface DeleteNotebookAction {
   type: NotebookActions.DELETE_NOTEBOOK;
-  payload: number;
+  payload: { notebookId: number };
 }
 
 export interface UpdateNotebookCellsAction {
   type: NotebookActions.UPDATE_NOTEBOOK_CELLS;
-  payload: Partial<NotebookFile>;
+  payload: { notebook: Partial<NotebookFile> };
 }
 
 export interface UpdateNotebookTitleAction {
   type: NotebookActions.UPDATE_NOTEBOOK_TITLE;
-  payload: Partial<NotebookFile>;
+  payload: { notebook: Partial<NotebookFile> };
 }
 
 export interface SetNotebooksAction {
   type: NotebookActions.SET_NOTEBOOKS;
-  payload: NotebookFile[];
+  payload: { notebooks: NotebookFile[] };
 }
 
 export type NotebookAction =
@@ -41,27 +41,27 @@ export type NotebookAction =
   | SetNotebooksAction;
 
 export function addNotebookAction(notebook: NotebookFile): AddNotebookAction {
-  return { type: NotebookActions.ADD_NOTEBOOK, payload: notebook };
+  return { type: NotebookActions.ADD_NOTEBOOK, payload: { notebook } };
 }
 
 export function deleteNotebookAction(notebookId: number): DeleteNotebookAction {
-  return { type: NotebookActions.DELETE_NOTEBOOK, payload: notebookId };
+  return { type: NotebookActions.DELETE_NOTEBOOK, payload: { notebookId } };
 }
 
 export function updateNotebookCellsAction(
   notebook: Partial<NotebookFile>
 ): UpdateNotebookCellsAction {
-  return { type: NotebookActions.UPDATE_NOTEBOOK_CELLS, payload: notebook };
+  return { type: NotebookActions.UPDATE_NOTEBOOK_CELLS, payload: { notebook } };
 }
 
 export function updateNotebookTitleAction(
   notebook: Partial<NotebookFile>
 ): UpdateNotebookTitleAction {
-  return { type: NotebookActions.UPDATE_NOTEBOOK_TITLE, payload: notebook };
+  return { type: NotebookActions.UPDATE_NOTEBOOK_TITLE, payload: { notebook } };
 }
 
 export function setNotebooksAction(
   notebooks: NotebookFile[]
 ): SetNotebooksAction {
-  return { type: NotebookActions.SET_NOTEBOOKS, payload: notebooks };
+  return { type: NotebookActions.SET_NOTEBOOKS, payload: { notebooks } };
 }
