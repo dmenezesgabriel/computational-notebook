@@ -13,3 +13,5 @@ export interface NotebookFile {
   title: string;
   cells: CellData[];
 }
+
+export type EditorLanguages = "javascript" | "typescript" | "markdown";

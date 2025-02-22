@@ -1,19 +1,21 @@
-import { useState, useImperativeHandle, forwardRef } from "react";
+import { useState, useImperativeHandle, forwardRef, useCallback } from "react";
 
 import { runCode } from "../utils/code-execution";
 import { PlayCircle, Trash2 } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
-import type { CellData, CellHandle } from "../types";
+import type { CellData, CellHandle, EditorLanguages } from "../types";
 
-export const Cell = forwardRef<
-  CellHandle,
-  {
-    cell: CellData;
-    onChange: (id: number, changes: Partial<CellData>) => void;
-    onDelete: (id: number) => void;
-  }
->(({ cell, onChange, onDelete }, ref) => {
+interface NotebookCellProps {
+  cell: CellData;
+  onChange: (id: number, changes: Partial<CellData>) => void;
+  onDelete: (id: number) => void;
+}
+
+function NotebookCell(
+  { cell, onChange, onDelete }: NotebookCellProps,
+  ref: React.Ref<CellHandle>
+) {
   const [output, setOutput] = useState<string>("");
 
   const handleRun = async () => {
@@ -30,15 +32,21 @@ export const Cell = forwardRef<
     runCell: handleRun,
   }));
 
-  const handleCodeChange = (newValue: string) => {
-    onChange(cell.id, { code: newValue });
-  };
+  const handleCodeChange = useCallback(
+    (newValue: string) => {
+      onChange(cell.id, { code: newValue });
+    },
+    [cell.id, onChange]
+  );
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange(cell.id, {
-      language: e.target.value as "javascript" | "typescript" | "markdown",
-    });
-  };
+  const handleLanguageChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      onChange(cell.id, {
+        language: event.target.value as EditorLanguages,
+      });
+    },
+    [cell.id, onChange]
+  );
 
   const handleDelete = () => {
     onDelete(cell.id);
@@ -85,4 +93,6 @@ export const Cell = forwardRef<
       )}
     </div>
   );
-});
+}
+
+export const Cell = forwardRef(NotebookCell);

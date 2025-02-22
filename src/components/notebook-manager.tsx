@@ -7,7 +7,7 @@ import { NotebookContent } from "./notebook-content";
 import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
 import type { CellData, NotebookFile } from "../types";
 
-export const NotebooksManager: React.FC = () => {
+export function NotebooksManager() {
   // State for all saved notebooks.
   const [notebooks, setNotebooks] = useState<NotebookFile[]>([]);
   // State for open notebook IDs (the ones shown in tabs).
@@ -281,4 +281,4 @@ export const NotebooksManager: React.FC = () => {
       </main>
     </div>
   );
-};
+}

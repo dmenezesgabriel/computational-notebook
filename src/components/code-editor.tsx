@@ -2,24 +2,30 @@ import { EditorState, Compartment } from "@codemirror/state";
 import { basicSetup } from "codemirror";
 import { EditorView } from "@codemirror/view";
 import { javascript } from "@codemirror/lang-javascript";
+import { markdown } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import type { EditorLanguages } from "../types";
 
 interface CodeEditorProps {
   value: string;
-  language: "javascript" | "typescript" | "markdown";
+  language: EditorLanguages;
   onChange: (value: string) => void;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({
-  value,
-  language,
-  onChange,
-}) => {
+export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView>();
   // Create a compartment for the language extension.
   const languageCompartment = useRef(new Compartment());
+  const languages = useMemo(
+    () => ({
+      javascript: javascript(),
+      typescript: javascript({ typescript: true }),
+      markdown: markdown(),
+    }),
+    []
+  );
 
   useEffect(() => {
     if (editorDivRef.current) {
@@ -30,9 +36,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           basicSetup,
           oneDark,
           languageCompartment.current.of(
-            language === "javascript"
-              ? javascript()
-              : javascript({ typescript: true })
+            languages[language] || languages.javascript
           ),
           // Update listener to propagate changes.
           EditorView.updateListener.of((update) => {
@@ -54,7 +58,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         view.destroy();
       };
     }
-  }, []); // initialize once on mount
+  }, [language, languages, onChange, value]); // initialize once on mount
 
   // Update editor content if the external value changes.
   useEffect(() => {
@@ -74,18 +78,15 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const view = editorViewRef.current;
     if (view) {
-      const newExtension =
-        language === "javascript"
-          ? javascript()
-          : javascript({ typescript: true });
+      const newExtension = languages[language] || languages.javascript;
 
       view.dispatch({
         effects: languageCompartment.current.reconfigure(newExtension),
       });
     }
-  }, [language]);
+  }, [language, languages]);
 
   return (
     <div ref={editorDivRef} className="rounded-md border border-gray-300" />
   );
-};
+}
