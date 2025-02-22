@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
-import { NotebookSidebar } from "./notebook-sidebar";
+import { Sidebar } from "./sidebar";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { decodeNotebookFromURL } from "../utils/notebook";
@@ -75,7 +75,7 @@ export function NotebooksManager() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <NotebookSidebar
+      <Sidebar
         isSidebarCollapsed={isSidebarCollapsed}
         onCollapseSidebar={setIsSidebarCollapsed}
       />
