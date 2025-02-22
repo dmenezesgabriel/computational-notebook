@@ -6,10 +6,15 @@ import { Plus, Trash2, X, Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
 import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
 import type { CellData, NotebookFile } from "../types";
+import { notebooksReducer } from "../reducers/notebook/reducer";
+import { NotebookActions } from "../reducers/notebook/actions";
 import {
-  NotebookActions,
-  notebooksReducer,
-} from "../reducers/notebook/reducer";
+  addNotebookAction,
+  deleteNotebookAction,
+  setNotebooksAction,
+  updateNotebookCellsAction,
+  updateNotebookTitleAction,
+} from "../reducers/notebook/actions";
 
 export function NotebooksManager() {
   // State for all saved notebooks.
@@ -24,15 +29,12 @@ export function NotebooksManager() {
   useEffect(() => {
     const loadNotebooks = async () => {
       const preloadedNotebooks = await preloadMarkdownNotebooks();
-      dispatch({
-        type: NotebookActions.SET_NOTEBOOKS,
-        payload: preloadedNotebooks,
-      });
+      dispatch(setNotebooksAction(preloadedNotebooks));
 
       // Check for notebook data in URL
       const urlNotebook = decodeNotebookFromURL();
       if (urlNotebook) {
-        dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: urlNotebook });
+        dispatch(addNotebookAction(urlNotebook));
         openNotebook(urlNotebook.id);
       }
     };
@@ -53,12 +55,12 @@ export function NotebooksManager() {
         },
       ],
     };
-    dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: newNotebook });
+    dispatch(addNotebookAction(newNotebook));
   };
 
   // Sidebar: Delete a notebook.
   const deleteNotebook = (id: number) => {
-    dispatch({ type: NotebookActions.DELETE_NOTEBOOK, payload: id });
+    dispatch(deleteNotebookAction(id));
     // Also remove from open tabs.
     setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
     if (activeNotebookId === id) {
@@ -86,18 +88,12 @@ export function NotebooksManager() {
 
   // Update a notebook's cells when changes occur in the NotebookContent.
   const updateNotebookCells = (id: number, newCells: CellData[]) => {
-    dispatch({
-      type: NotebookActions.UPDATE_NOTEBOOK,
-      payload: { id: id, cells: newCells },
-    });
+    dispatch(updateNotebookCellsAction({ id, cells: newCells }));
   };
 
   // Update a notebook's title.
   const updateNotebookTitle = (id: number, newTitle: string) => {
-    dispatch({
-      type: NotebookActions.UPDATE_NOTEBOOK,
-      payload: { id: id, title: newTitle },
-    });
+    dispatch(updateNotebookTitleAction({ id, title: newTitle }));
   };
 
   // Get the active notebook.
