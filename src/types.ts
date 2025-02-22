@@ -1,6 +1,7 @@
 export interface CellData {
   id: number;
   code: string;
+  output?: string;
   language: "javascript" | "typescript" | "markdown";
 }
 
@@ -9,7 +10,7 @@ export interface CellHandle {
 }
 
 export interface NotebookFile {
-  id: number;
+  id: string;
   title: string;
   cells: CellData[];
 }

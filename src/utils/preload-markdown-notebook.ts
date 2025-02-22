@@ -1,4 +1,5 @@
 import type { CellData, NotebookFile } from "../types";
+import { v4 as uuidv4 } from "uuid";
 
 export async function preloadMarkdownNotebooks(): Promise<NotebookFile[]> {
   const files = import.meta.glob("../../notebooks/*.md");
@@ -41,7 +42,7 @@ export async function preloadMarkdownNotebooks(): Promise<NotebookFile[]> {
         cells.push(currentCell);
       }
 
-      const newId = Date.now();
+      const newId = uuidv4();
       return {
         id: newId,
         title: key.replace("../../notebooks/", "").replace(".md", ""),

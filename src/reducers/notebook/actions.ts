@@ -15,7 +15,7 @@ export interface AddNotebookAction {
 
 export interface DeleteNotebookAction {
   type: NotebookActions.DELETE_NOTEBOOK;
-  payload: { notebookId: number };
+  payload: { notebookId: string };
 }
 
 export interface UpdateNotebookCellsAction {
@@ -44,7 +44,7 @@ export function addNotebookAction(notebook: NotebookFile): AddNotebookAction {
   return { type: NotebookActions.ADD_NOTEBOOK, payload: { notebook } };
 }
 
-export function deleteNotebookAction(notebookId: number): DeleteNotebookAction {
+export function deleteNotebookAction(notebookId: string): DeleteNotebookAction {
   return { type: NotebookActions.DELETE_NOTEBOOK, payload: { notebookId } };
 }
 

@@ -1,4 +1,5 @@
 import type { CellData, NotebookFile } from "../types";
+import { v4 as uuidv4 } from "uuid";
 
 export async function importNotebookFromMarkdown(
   file: File
@@ -34,6 +35,6 @@ export async function importNotebookFromMarkdown(
     cells.push(currentCell);
   }
 
-  const newId = Date.now();
+  const newId = uuidv4();
   return { id: newId, title: file.name.replace(".md", ""), cells };
 }

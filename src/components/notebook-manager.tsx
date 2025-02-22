@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useReducer } from "react";
+import React, { useEffect, useState, useReducer, useCallback } from "react";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
@@ -7,6 +7,8 @@ import { NotebookContent } from "./notebook-content";
 import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
 import type { CellData, NotebookFile } from "../types";
 import { notebooksReducer } from "../reducers/notebook/reducer";
+import { v4 as uuidv4 } from "uuid";
+import { produce } from "immer";
 
 import {
   addNotebookAction,
@@ -17,21 +19,28 @@ import {
 } from "../reducers/notebook/actions";
 
 export function NotebooksManager() {
-  // State for all saved notebooks.
   const [notebooks, dispatch] = useReducer(notebooksReducer, []);
-  // State for open notebook IDs (the ones shown in tabs).
-  const [openNotebookIds, setOpenNotebookIds] = useState<number[]>([]);
-  // The currently active notebook (by id).
-  const [activeNotebookId, setActiveNotebookId] = useState<number | null>(null);
-  // State for sidebar collapse.
+  const [openNotebookIds, setOpenNotebookIds] = useState<string[]>([]);
+  const [activeNotebookId, setActiveNotebookId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
+  const openNotebook = useCallback((id: string) => {
+    setOpenNotebookIds((state) =>
+      produce(state, (draft) => {
+        if (!draft.includes(id)) {
+          draft.push(id);
+        }
+      })
+    );
+
+    setActiveNotebookId(id);
+  }, []);
 
   useEffect(() => {
     const loadNotebooks = async () => {
       const preloadedNotebooks = await preloadMarkdownNotebooks();
       dispatch(setNotebooksAction(preloadedNotebooks));
 
-      // Check for notebook data in URL
       const urlNotebook = decodeNotebookFromURL();
       if (urlNotebook) {
         dispatch(addNotebookAction(urlNotebook));
@@ -39,11 +48,12 @@ export function NotebooksManager() {
       }
     };
     loadNotebooks();
-  }, []);
+  }, [openNotebook]);
 
   // Sidebar: Create new notebook.
   const createNotebook = () => {
-    const newId = notebooks.length ? notebooks[notebooks.length - 1].id + 1 : 1;
+    const newId = uuidv4();
+    console.log("Creating new notebook with id: ", newId);
     const newNotebook: NotebookFile = {
       id: newId,
       title: `Notebook ${newId}`,
@@ -59,7 +69,7 @@ export function NotebooksManager() {
   };
 
   // Sidebar: Delete a notebook.
-  const deleteNotebook = (id: number) => {
+  const deleteNotebook = (id: string) => {
     dispatch(deleteNotebookAction(id));
     // Also remove from open tabs.
     setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
@@ -68,16 +78,8 @@ export function NotebooksManager() {
     }
   };
 
-  // Open a notebook in the tab view.
-  const openNotebook = (id: number) => {
-    if (!openNotebookIds.includes(id)) {
-      setOpenNotebookIds([...openNotebookIds, id]);
-    }
-    setActiveNotebookId(id);
-  };
-
   // Close a notebook tab.
-  const closeNotebookTab = (id: number) => {
+  const closeNotebookTab = (id: string) => {
     setOpenNotebookIds(openNotebookIds.filter((nid) => nid !== id));
     if (activeNotebookId === id) {
       setActiveNotebookId(
@@ -87,12 +89,12 @@ export function NotebooksManager() {
   };
 
   // Update a notebook's cells when changes occur in the NotebookContent.
-  const updateNotebookCells = (id: number, newCells: CellData[]) => {
+  const updateNotebookCells = (id: string, newCells: CellData[]) => {
     dispatch(updateNotebookCellsAction({ id, cells: newCells }));
   };
 
   // Update a notebook's title.
-  const updateNotebookTitle = (id: number, newTitle: string) => {
+  const updateNotebookTitle = (id: string, newTitle: string) => {
     dispatch(updateNotebookTitleAction({ id, title: newTitle }));
   };
 
