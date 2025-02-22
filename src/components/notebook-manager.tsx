@@ -7,7 +7,7 @@ import { NotebookContent } from "./notebook-content";
 import { decodeNotebookFromURL, encodeNotebookToURL } from "../utils/notebook";
 import type { CellData, NotebookFile } from "../types";
 import { notebooksReducer } from "../reducers/notebook/reducer";
-import { NotebookActions } from "../reducers/notebook/actions";
+
 import {
   addNotebookAction,
   deleteNotebookAction,
@@ -120,7 +120,7 @@ export function NotebooksManager() {
     const file = event.target.files?.[0];
     if (file) {
       const notebook = await importNotebookFromMarkdown(file);
-      dispatch({ type: NotebookActions.ADD_NOTEBOOK, payload: notebook });
+      dispatch(addNotebookAction(notebook));
       openNotebook(notebook.id);
     }
   };

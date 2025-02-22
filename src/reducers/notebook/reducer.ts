@@ -1,9 +1,9 @@
 import type { NotebookFile } from "../../types";
-import { NotebookActions } from "./actions";
+import { NotebookActions, type NotebookAction } from "./actions";
 
 export function notebooksReducer(
   state: NotebookFile[],
-  action: { type: string; payload: any }
+  action: NotebookAction
 ): NotebookFile[] {
   switch (action.type) {
     case NotebookActions.ADD_NOTEBOOK:
