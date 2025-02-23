@@ -46,3 +46,39 @@ x;
 ```js
 x;
 ```
+
+<!-- 7 -->
+
+```jsx
+import * as React from "https://unpkg.com/react@18/umd/react.development.js";
+import * as ReactDom from "https://unpkg.com/react-dom@18/umd/react-dom.development.js";
+
+function Greetings() {
+  return (
+    <h1>Hello readers, Thankyou for reading this blog! 'a' result is {a}</h1>
+  );
+}
+
+return <Greetings />; //displays in an Iframe that as a div with id "root" if there is no return the component is added to the global context and can be accessed by other cells
+```
+
+<!-- 8 -->
+
+```tsx
+import * as React from "https://unpkg.com/react@18/umd/react.development.js";
+import * as ReactDom from "https://unpkg.com/react-dom@18/umd/react-dom.development.js";
+
+type HelloProps = {
+  name: string;
+};
+
+function Hello({ name }: HelloProps) {
+  return (
+    <h1>
+      Hello {name}, Thankyou for reading this blog! 'a' result is {a}
+    </h1>
+  );
+}
+
+return <Hello name="John" />; //displays in an Iframe that as a div with id "root" if there is no return the component is added to the global context and can be accessed by other cells
+```

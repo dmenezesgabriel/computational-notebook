@@ -11,13 +11,20 @@ interface CodeEditorProps {
   value: string;
   language: EditorLanguages;
   onChange: (value: string) => void;
+  wordWrap?: boolean;
 }
 
-export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
+export function CodeEditor({
+  value,
+  language,
+  onChange,
+  wordWrap,
+}: CodeEditorProps) {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView>();
   const languageCompartment = useRef(new Compartment());
   const initialValueRef = useRef(value);
+  const lineWrapping = useRef(new Compartment());
 
   const languages = useMemo(
     () => ({
@@ -44,6 +51,7 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
               onChange(text);
             }
           }),
+          lineWrapping.current.of(EditorView.lineWrapping),
         ],
       });
 
@@ -51,6 +59,7 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
         state: startState,
         parent: editorDivRef.current,
       });
+
       editorViewRef.current = view;
 
       return () => {
@@ -80,6 +89,17 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
       });
     }
   }, [language, languages]);
+
+  useEffect(() => {
+    const view = editorViewRef.current;
+    if (view) {
+      view.dispatch({
+        effects: lineWrapping.current.reconfigure(
+          wordWrap ? EditorView.lineWrapping : []
+        ),
+      });
+    }
+  }, [wordWrap]);
 
   return <div ref={editorDivRef} />;
 }

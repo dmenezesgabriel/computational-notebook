@@ -1,7 +1,7 @@
 import { useState, useImperativeHandle, forwardRef, useCallback } from "react";
 
 import { runCode } from "../utils/code-execution";
-import { PlayCircle, Trash2 } from "lucide-react";
+import { PlayCircle, Trash2, WrapText } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
 import type { CellData, CellHandle, EditorLanguages } from "../types";
@@ -17,6 +17,7 @@ function NotebookCell(
   ref: React.Ref<CellHandle>
 ) {
   const [output, setOutput] = useState<string>("");
+  const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
 
   const handleRun = async () => {
     if (cell.language === "markdown") {
@@ -52,6 +53,10 @@ function NotebookCell(
     onDelete(cell.id);
   };
 
+  const toggleWordWrap = () => {
+    setIsWordWrapEnabled(!isWordWrapEnabled);
+  };
+
   return (
     <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden">
       <div className="bg-slate-100 px-3 py-2 flex items-center space-x-2 border-b border-slate-300">
@@ -78,12 +83,20 @@ function NotebookCell(
         >
           <Trash2 className="w-4 h-4" />
         </button>
+        <button
+          onClick={toggleWordWrap}
+          className="flex items-center justify-center text-slate-800 hover:bg-slate-300 p-1 rounded"
+          title="Toggle Word Wrap"
+        >
+          <WrapText className="w-4 h-4" />
+        </button>
       </div>
       <div className="px-4 py-2">
         <CodeEditor
           value={cell.code}
           language={cell.language}
           onChange={handleCodeChange}
+          wordWrap={isWordWrapEnabled}
         />
       </div>
       {output && (

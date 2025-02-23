@@ -90,14 +90,14 @@ export function NotebooksManager() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-slate-100 max-w-full">
       <Sidebar
         isSidebarCollapsed={isSidebarCollapsed}
         onCollapseSidebar={setIsSidebarCollapsed}
       />
 
       {/* Main Content Area with Tabbed View */}
-      <main className="flex-1 flex flex-col bg-white">
+      <main className="flex-1 flex flex-col bg-white min-w-0">
         {/* Tabs Header */}
         <div
           className="flex space-x-px bg-slate-100 border-b border-slate-300 overflow-x-auto"
