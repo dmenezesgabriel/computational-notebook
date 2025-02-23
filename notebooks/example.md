@@ -29,3 +29,20 @@ b;
 // JavaScript cell example using previously declared 'a':
 a + 7;
 ```
+
+<!-- 5 -->
+
+```js
+const x = [1, 2, 3, 4, 5, 6].map((index, item) => {
+  const isEven = item % 2 === 0;
+  return isEven;
+});
+
+x;
+```
+
+<!-- 6 -->
+
+```js
+x;
+```
