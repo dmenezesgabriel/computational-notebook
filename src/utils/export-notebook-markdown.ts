@@ -4,19 +4,21 @@ import { toMarkdown } from "mdast-util-to-markdown";
 import type { Root, Code, Html } from "mdast";
 
 export function exportNotebookToMarkdown(notebook: NotebookFile): string {
+  const codeLanguages = {
+    typescript: "ts",
+    javascript: "js",
+    markdown: "md",
+  };
+
   const nodes = notebook.cells.flatMap((cell) => {
     const idComment: Html = {
       type: "html",
       value: `<!-- ${cell.id} -->`,
     };
 
-    if (cell.language === "markdown") {
-      return [idComment, (fromMarkdown(cell.code.trim()) as Root).children[0]];
-    }
-
     const node: Code = {
       type: "code",
-      lang: cell.language === "typescript" ? "ts" : "js",
+      lang: codeLanguages[cell.language],
       value: cell.code.trim(),
     };
 
