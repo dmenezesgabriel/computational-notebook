@@ -1,6 +1,13 @@
-import { useState, useImperativeHandle, forwardRef, useCallback } from "react";
+import {
+  useState,
+  useImperativeHandle,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 
-import { runCode } from "../utils/code-execution";
+import { runCode, sharedContext } from "../utils/code-execution";
 import { PlayCircle, Trash2, WrapText } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
@@ -18,10 +25,39 @@ function NotebookCell(
 ) {
   const [output, setOutput] = useState<string>("");
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const getIframeSharedContext = () => {
+    const iframe = iframeRef.current;
+    if (iframe) {
+      const iframeWindow = iframe.contentWindow;
+      if (iframeWindow) {
+        iframeWindow.sharedContext = sharedContext;
+      }
+    }
+  };
 
   const handleRun = async () => {
     if (cell.language === "markdown") {
       setOutput(cell.code);
+    } else if (cell.language === "jsx" || cell.language === "tsx") {
+      const result = await runCode(cell.code, cell.language);
+      const iframe = iframeRef.current;
+      if (iframe) {
+        const document = iframe.contentDocument;
+        if (document) {
+          document.body.innerHTML = "";
+          const rootDiv = document.createElement("div");
+          rootDiv.setAttribute("id", "root");
+          document.body.appendChild(rootDiv);
+          const script = document.createElement("script");
+          script.type = "module";
+          script.textContent = result;
+          document.body.appendChild(script);
+          getIframeSharedContext();
+        }
+      }
     } else {
       const result = await runCode(cell.code, cell.language);
       setOutput(result);
@@ -56,6 +92,11 @@ function NotebookCell(
   const toggleWordWrap = () => {
     setIsWordWrapEnabled(!isWordWrapEnabled);
   };
+
+  useEffect(() => {
+    // Update the iframe key to force re-render when the cell's code changes
+    setIframeKey((prevKey) => prevKey + 1);
+  }, [cell.code, cell.id]);
 
   return (
     <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden">
@@ -101,10 +142,20 @@ function NotebookCell(
           wordWrap={isWordWrapEnabled}
         />
       </div>
-      {output && (
-        <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono">
-          <ReactMarkdown>{output}</ReactMarkdown>
-        </div>
+      {cell.language === "jsx" || cell.language === "tsx" ? (
+        <iframe
+          key={iframeKey}
+          id={`jsx-iframe-${cell.id}`}
+          title={`JSX Output ${cell.id}`}
+          style={{ width: "100%", height: "300px", border: "none" }}
+          ref={iframeRef}
+        />
+      ) : (
+        output && (
+          <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono">
+            <ReactMarkdown>{output}</ReactMarkdown>
+          </div>
+        )
       )}
     </div>
   );

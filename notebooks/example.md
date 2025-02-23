@@ -50,21 +50,33 @@ x;
 <!-- 7 -->
 
 ```jsx
-import * as React from "https://unpkg.com/react@18/umd/react.development.js";
-import * as ReactDom from "https://unpkg.com/react-dom@18/umd/react-dom.development.js";
+import React from "https://cdn.jsdelivr.net/npm/react@18/+esm";
+import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18/+esm";
 
 function Greetings() {
   return (
     <h1>Hello readers, Thankyou for reading this blog! 'a' result is {a}</h1>
   );
 }
+
+function GrettingApp() {
+  return <Greetings name="John" />;
+}
+
+const rootDiv1 = document.createElement("div");
+rootDiv1.setAttribute("id", "root1");
+
+const domNode = document.getElementById("root");
+const root1 = ReactDOM.createRoot(domNode);
+
+root1.render(<GrettingApp />);
 ```
 
 <!-- 8 -->
 
 ```tsx
-import * as React from "https://unpkg.com/react@18/umd/react.development.js";
-import * as ReactDom from "https://unpkg.com/react-dom@18/umd/react-dom.development.js";
+import React from "https://cdn.jsdelivr.net/npm/react@18/+esm";
+import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18/+esm";
 
 type HelloProps = {
   name: string;
@@ -77,4 +89,16 @@ function Hello({ name }: HelloProps) {
     </h1>
   );
 }
+
+function HelloApp() {
+  return <Hello name="John" />;
+}
+
+const rootDiv2 = document.createElement("div");
+rootDiv2.setAttribute("id", "root");
+
+const domNode = document.getElementById("root");
+const root2 = ReactDOM.createRoot(domNode);
+
+root2.render(<HelloApp />);
 ```

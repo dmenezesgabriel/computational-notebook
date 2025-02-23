@@ -1,7 +1,7 @@
 import ts from "typescript";
 import { transformUserCode } from "./code-transform";
 
-const sharedContext: { [key: string]: any } = {};
+export const sharedContext: { [key: string]: any } = {};
 
 interface Output {
   type: "text" | "component";
@@ -12,13 +12,25 @@ export async function runCode(code: string, language: string): Promise<string> {
   let output: Output = { type: "text", content: "Code executed successfully." };
   const logs: string[] = [];
 
-  // Custom display function that collects output.
   const display = (...args: any[]) => {
     const message = args
-      .map((a) => (typeof a === "object" ? JSON.stringify(a) : a))
+      .map((a) =>
+        typeof a === "object" ? JSON.stringify(a, getCircularReplacer()) : a
+      )
       .join(" ");
     logs.push(message);
     console.log(...args);
+  };
+
+  const getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (_key: any, value: any) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) return "[Circular]";
+        seen.add(value);
+      }
+      return value;
+    };
   };
 
   // Expose display and sharedContext globally so that user code can call it.
@@ -80,6 +92,7 @@ export async function runCode(code: string, language: string): Promise<string> {
         },
       });
       transpiledCode = result.outputText;
+      return transpiledCode;
     }
 
     // Create a Blob URL for the code.
