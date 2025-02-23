@@ -19,7 +19,9 @@ b;
 
 <!-- 3 -->
 
+```md
 # Hello from Markdown
+```
 
 <!-- 4 -->
 

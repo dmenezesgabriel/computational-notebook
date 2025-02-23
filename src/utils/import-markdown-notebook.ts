@@ -1,40 +1,71 @@
 import type { CellData, NotebookFile } from "../types";
 import { v4 as uuidv4 } from "uuid";
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkFrontmatter from "remark-frontmatter";
+import type { Code, Paragraph, Text, Html } from "mdast";
 
 export async function importNotebookFromMarkdown(
   file: File
 ): Promise<NotebookFile> {
-  const text = await file.text();
-  const lines = text.split("\n");
-  const cells: CellData[] = [];
-  let currentCell: CellData | null = null;
+  const codeLanguages = {
+    ts: "typescript",
+    js: "javascript",
+    md: "markdown",
+  };
 
-  lines.forEach((line) => {
-    const match = line.match(/^<!-- (\d+) -->$/);
-    if (match) {
-      if (currentCell) {
-        cells.push(currentCell);
+  const text = await file.text();
+
+  const processor = unified().use(remarkParse).use(remarkFrontmatter);
+
+  const ast = processor.parse(text);
+  const cells: CellData[] = [];
+  let lastSeenId: number | null = null;
+
+  ast.children.forEach((node) => {
+    if (node.type === "text" && node.value.trim() === "") {
+      return;
+    }
+
+    if (node.type === "html") {
+      const htmlNode = node as Html;
+      const idMatch = htmlNode.value.match(/<!-- (\d+) -->/);
+
+      if (idMatch) {
+        lastSeenId = parseInt(idMatch[1], 10);
       }
-      currentCell = { id: parseInt(match[1]), code: "", language: "markdown" };
-    } else if (currentCell) {
-      if (line.startsWith("```")) {
-        const lang = line.slice(3).trim();
-        currentCell.language = lang === "ts" ? "typescript" : "javascript";
-      } else if (line === "```") {
-        cells.push(currentCell);
-        currentCell = null;
-      } else {
-        currentCell.code += line + "\n";
+    } else if (node.type === "code") {
+      const codeNode = node as Code;
+
+      cells.push({
+        id: lastSeenId || Date.now() + Math.random(),
+        code: codeNode.value.trim(),
+        language: codeLanguages[codeNode.lang],
+      });
+
+      lastSeenId = null;
+    } else if (node.type === "text" || node.type === "paragraph") {
+      const textNode = node as Text | Paragraph;
+      const textContent =
+        textNode.type === "text"
+          ? textNode.value
+          : textNode.children.reduce((acc, child) => {
+              if ("value" in child) return acc + child.value;
+              return acc;
+            }, "");
+
+      if (textContent.trim()) {
+        cells.push({
+          id: lastSeenId || Date.now() + Math.random(),
+          code: textContent.trim(),
+          language: codeLanguages[codeNode.lang],
+        });
+        lastSeenId = null;
       }
-    } else if (line.trim() !== "") {
-      currentCell = { id: Date.now(), code: line, language: "markdown" };
     }
   });
 
-  if (currentCell) {
-    cells.push(currentCell);
-  }
-
   const newId = uuidv4();
+
   return { id: newId, title: file.name.replace(".md", ""), cells };
 }

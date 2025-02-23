@@ -1,19 +1,29 @@
 import type { NotebookFile } from "../types";
+import { fromMarkdown } from "mdast-util-from-markdown";
+import { toMarkdown } from "mdast-util-to-markdown";
+import type { Root, Code, Html } from "mdast";
 
 export function exportNotebookToMarkdown(notebook: NotebookFile): string {
-  const markdownLines: string[] = [];
+  const nodes = notebook.cells.flatMap((cell) => {
+    const idComment: Html = {
+      type: "html",
+      value: `<!-- ${cell.id} -->`,
+    };
 
-  notebook.cells.forEach((cell) => {
-    markdownLines.push(`<!-- ${cell.id} -->`);
     if (cell.language === "markdown") {
-      markdownLines.push(cell.code);
-    } else {
-      const lang = cell.language === "typescript" ? "ts" : "js";
-      markdownLines.push(`\`\`\`${lang}`);
-      markdownLines.push(cell.code);
-      markdownLines.push(`\`\`\``);
+      return [idComment, (fromMarkdown(cell.code.trim()) as Root).children[0]];
     }
+
+    const node: Code = {
+      type: "code",
+      lang: cell.language === "typescript" ? "ts" : "js",
+      value: cell.code.trim(),
+    };
+
+    return [idComment, node];
   });
 
-  return markdownLines.join("\n");
+  const root: Root = { type: "root", children: nodes };
+
+  return toMarkdown(root);
 }

@@ -9,7 +9,6 @@ export function Toolbar() {
 
   const handleCreateNotebook = () => {
     const newId = uuidv4();
-    console.log("Creating new notebook with id: ", newId);
     const newNotebook = {
       id: newId,
       title: `Notebook ${newId}`,

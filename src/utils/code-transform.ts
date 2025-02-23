@@ -44,7 +44,6 @@ export function transformUserCode(code: string): string {
   }
 
   processedLines.push(...sharedContextAssignment);
-  console.log(processedLines);
 
   // Remove trailing blank lines.
   while (

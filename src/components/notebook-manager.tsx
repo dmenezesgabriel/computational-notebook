@@ -30,7 +30,6 @@ export function NotebooksManager() {
       if (!isInitialized.current) {
         const preloadedNotebooks = await preloadMarkdownNotebooks();
         preloadedNotebooks.forEach((notebook) => {
-          console.log(notebook);
           createNotebook(notebook);
         });
       }
