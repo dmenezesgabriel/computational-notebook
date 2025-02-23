@@ -24,6 +24,7 @@ export function NotebooksManager() {
   } = useNotebooks();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [tabsMaxWidth, setTabsMaxWidth] = useState<number>(800);
 
   useEffect(() => {
     const loadNotebooks = async () => {
@@ -44,6 +45,22 @@ export function NotebooksManager() {
     loadNotebooks();
     isInitialized.current = true;
   }, [createNotebook, openNotebook]);
+
+  useEffect(() => {
+    const updateTabsMaxWidth = () => {
+      const sidebarWidth = isSidebarCollapsed ? 64 : 256; // Adjust based on your sidebar's actual width
+      const availableWidth = window.innerWidth - sidebarWidth;
+      setTabsMaxWidth(availableWidth);
+    };
+
+    // Initial calculation
+    updateTabsMaxWidth();
+
+    // Update on window resize
+    window.addEventListener("resize", updateTabsMaxWidth);
+
+    return () => window.removeEventListener("resize", updateTabsMaxWidth);
+  }, [isSidebarCollapsed]);
 
   const handleExportNotebook = () => {
     if (activeNotebook) {
@@ -82,38 +99,43 @@ export function NotebooksManager() {
       {/* Main Content Area with Tabbed View */}
       <main className="flex-1 flex flex-col bg-white">
         {/* Tabs Header */}
-        <div className="flex space-x-px bg-slate-100 border-b border-slate-300">
-          {openNotebookIds.map((id) => {
-            const nb = notebooks.find((n) => n.id === id);
-            if (!nb) return null;
-            return (
-              <div
-                key={id}
-                onClick={() => setActiveNotebookId(id)}
-                className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
-                  activeNotebookId === id
-                    ? "bg-white text-slate-700 border-t-2 border-t-blue-500"
-                    : "text-slate-500 hover:bg-slate-200"
-                }`}
-              >
-                <input
-                  type="text"
-                  value={nb.title}
-                  onChange={(e) => updateNotebookTitle(id, e.target.value)}
-                  className="bg-transparent border-none focus:outline-none"
-                />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeNotebookTab(id);
-                  }}
-                  className="text-slate-700 hover:bg-slate-300 p-1 rounded"
+        <div
+          className="flex space-x-px bg-slate-100 border-b border-slate-300 overflow-x-auto"
+          style={{ maxWidth: `${tabsMaxWidth}px` }}
+        >
+          <div className="flex flex-nowrap whitespace-nowrap">
+            {openNotebookIds.map((id) => {
+              const nb = notebooks.find((n) => n.id === id);
+              if (!nb) return null;
+              return (
+                <div
+                  key={id}
+                  onClick={() => setActiveNotebookId(id)}
+                  className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
+                    activeNotebookId === id
+                      ? "bg-white text-slate-700 border-t-2 border-t-blue-500"
+                      : "text-slate-500 hover:bg-slate-200"
+                  }`}
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            );
-          })}
+                  <input
+                    type="text"
+                    value={nb.title}
+                    onChange={(e) => updateNotebookTitle(id, e.target.value)}
+                    className="bg-transparent border-none focus:outline-none"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeNotebookTab(id);
+                    }}
+                    className="text-slate-700 hover:bg-slate-300 p-1 rounded"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
         {/* Active Notebook Content */}
         <div className="flex-1 overflow-auto p-4">
