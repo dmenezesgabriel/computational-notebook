@@ -5,7 +5,7 @@ import { Sidebar } from "./sidebar";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { decodeNotebookFromURL } from "../utils/notebook";
-import { useNotebook } from "../contexts/notebook-context";
+import { useNotebooks } from "../contexts/notebooks-context";
 import { encodeNotebookToURL } from "../utils/notebook";
 
 export function NotebooksManager() {
@@ -18,10 +18,9 @@ export function NotebooksManager() {
     setActiveNotebookId,
     createNotebook,
     closeNotebookTab,
-    updateNotebookCells,
     updateNotebookTitle,
     openNotebook,
-  } = useNotebook();
+  } = useNotebooks();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
@@ -73,7 +72,7 @@ export function NotebooksManager() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-slate-100">
       <Sidebar
         isSidebarCollapsed={isSidebarCollapsed}
         onCollapseSidebar={setIsSidebarCollapsed}
@@ -82,7 +81,7 @@ export function NotebooksManager() {
       {/* Main Content Area with Tabbed View */}
       <main className="flex-1 flex flex-col bg-white">
         {/* Tabs Header */}
-        <div className="flex space-x-px bg-gray-100 border-b border-gray-300">
+        <div className="flex space-x-px bg-slate-100 border-b border-slate-300">
           {openNotebookIds.map((id) => {
             const nb = notebooks.find((n) => n.id === id);
             if (!nb) return null;
@@ -92,8 +91,8 @@ export function NotebooksManager() {
                 onClick={() => setActiveNotebookId(id)}
                 className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
                   activeNotebookId === id
-                    ? "bg-white text-gray-700 border-t-2 border-t-blue-500"
-                    : "text-gray-500 hover:bg-gray-200"
+                    ? "bg-white text-slate-700 border-t-2 border-t-blue-500"
+                    : "text-slate-500 hover:bg-slate-200"
                 }`}
               >
                 <input
@@ -107,7 +106,7 @@ export function NotebooksManager() {
                     e.stopPropagation();
                     closeNotebookTab(id);
                   }}
-                  className="text-gray-700 hover:bg-gray-300 p-1 rounded"
+                  className="text-slate-700 hover:bg-slate-300 p-1 rounded"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -135,16 +134,10 @@ export function NotebooksManager() {
                   Export to Markdown
                 </button>
               </div>
-              <NotebookContent
-                key={activeNotebook.id}
-                cells={activeNotebook.cells}
-                onCellsChange={(newCells) =>
-                  updateNotebookCells(activeNotebook.id, newCells)
-                }
-              />
+              <NotebookContent key={activeNotebook.id} />
             </>
           ) : (
-            <div className="text-center text-gray-500 mt-8">
+            <div className="text-center text-slate-500 mt-8">
               No notebook open. Select one from the sidebar.
             </div>
           )}

@@ -1,13 +1,13 @@
 import "./index.css";
 
 import { NotebooksManager } from "./components/notebook-manager";
-import { NotebookProvider } from "./contexts/notebook-context";
+import { NotebooksProvider } from "./contexts/notebooks-context";
 
 function App() {
   return (
-    <NotebookProvider>
+    <NotebooksProvider>
       <NotebooksManager />
-    </NotebookProvider>
+    </NotebooksProvider>
   );
 }
 

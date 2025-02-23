@@ -1,11 +1,11 @@
 import React from "react";
 import { Plus } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { useNotebook } from "../contexts/notebook-context";
+import { useNotebooks } from "../contexts/notebooks-context";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
 
 export function Toolbar() {
-  const { createNotebook, openNotebook } = useNotebook();
+  const { createNotebook, openNotebook } = useNotebooks();
 
   const handleCreateNotebook = () => {
     const newId = uuidv4();

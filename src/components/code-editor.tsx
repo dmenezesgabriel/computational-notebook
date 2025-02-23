@@ -16,8 +16,9 @@ interface CodeEditorProps {
 export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView>();
-  // Create a compartment for the language extension.
   const languageCompartment = useRef(new Compartment());
+  const initialValueRef = useRef(value);
+
   const languages = useMemo(
     () => ({
       javascript: javascript(),
@@ -29,16 +30,14 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
 
   useEffect(() => {
     if (editorDivRef.current) {
-      // Create an EditorState with initial doc and extensions.
       const startState = EditorState.create({
-        doc: value,
+        doc: initialValueRef.current,
         extensions: [
           basicSetup,
           oneDark,
           languageCompartment.current.of(
             languages[language] || languages.javascript
           ),
-          // Update listener to propagate changes.
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               const text = update.state.doc.toString();
@@ -47,7 +46,7 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
           }),
         ],
       });
-      // Create the EditorView.
+
       const view = new EditorView({
         state: startState,
         parent: editorDivRef.current,
@@ -58,12 +57,10 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
         view.destroy();
       };
     }
-  }, [language, languages, onChange, value]); // initialize once on mount
+  }, []); // Only initialize once on mount
 
-  // Update editor content if the external value changes.
   useEffect(() => {
     const view = editorViewRef.current;
-
     if (view) {
       const currentValue = view.state.doc.toString();
       if (currentValue !== value) {
@@ -74,19 +71,15 @@ export function CodeEditor({ value, language, onChange }: CodeEditorProps) {
     }
   }, [value]);
 
-  // Update language if it changes using the compartment.
   useEffect(() => {
     const view = editorViewRef.current;
     if (view) {
       const newExtension = languages[language] || languages.javascript;
-
       view.dispatch({
         effects: languageCompartment.current.reconfigure(newExtension),
       });
     }
   }, [language, languages]);
 
-  return (
-    <div ref={editorDivRef} className="rounded-md border border-gray-300" />
-  );
+  return <div ref={editorDivRef} />;
 }

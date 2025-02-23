@@ -53,12 +53,12 @@ function NotebookCell(
   };
 
   return (
-    <div className="bg-white border border-gray-300 rounded-md my-2 overflow-hidden">
-      <div className="bg-gray-100 px-3 py-2 flex items-center space-x-2 border-b border-gray-300">
+    <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden">
+      <div className="bg-slate-100 px-3 py-2 flex items-center space-x-2 border-b border-slate-300">
         <select
           value={cell.language}
           onChange={handleLanguageChange}
-          className="text-sm bg-white border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="text-sm bg-white border border-slate-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
@@ -66,14 +66,14 @@ function NotebookCell(
         </select>
         <button
           onClick={handleRun}
-          className="flex items-center justify-center text-gray-800 hover:bg-gray-300 p-1 rounded"
+          className="flex items-center justify-center text-slate-800 hover:bg-slate-300 p-1 rounded"
           title="Run Cell"
         >
           <PlayCircle className="w-4 h-4" />
         </button>
         <button
           onClick={handleDelete}
-          className="flex items-center justify-center text-gray-800 hover:bg-gray-300 p-1 rounded"
+          className="flex items-center justify-center text-slate-800 hover:bg-slate-300 p-1 rounded"
           title="Delete Cell"
         >
           <Trash2 className="w-4 h-4" />
@@ -87,7 +87,7 @@ function NotebookCell(
         />
       </div>
       {output && (
-        <div className="border-t border-gray-300 bg-gray-100 p-4 text-sm font-mono">
+        <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono">
           <ReactMarkdown>{output}</ReactMarkdown>
         </div>
       )}

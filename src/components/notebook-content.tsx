@@ -4,31 +4,30 @@ import React from "react";
 import { formatCode } from "../utils/code-formatting";
 import { PlayCircle, Plus } from "lucide-react";
 import type { CellData, CellHandle } from "../types";
+import { useNotebooks } from "../contexts/notebooks-context";
 
-export interface NotebookContentProps {
-  cells: CellData[];
-  onCellsChange: (cells: CellData[]) => void;
-}
+export function NotebookContent() {
+  const { activeNotebook, updateNotebookCells } = useNotebooks();
+  const cells = activeNotebook?.cells || [];
 
-export const NotebookContent: React.FC<NotebookContentProps> = ({
-  cells,
-  onCellsChange,
-}) => {
   const updateCell = (id: number, changes: Partial<CellData>) => {
+    if (!activeNotebook) return;
     const newCells = cells.map((cell) =>
       cell.id === id ? { ...cell, ...changes } : cell
     );
-    onCellsChange(newCells);
+    updateNotebookCells(activeNotebook.id, newCells);
   };
 
   const deleteCell = (id: number) => {
+    if (!activeNotebook) return;
     const newCells = cells.filter((cell) => cell.id !== id);
-    onCellsChange(newCells);
+    updateNotebookCells(activeNotebook.id, newCells);
   };
 
   const addCell = () => {
+    if (!activeNotebook) return;
     const newId = cells.length ? cells[cells.length - 1].id + 1 : 1;
-    onCellsChange([
+    updateNotebookCells(activeNotebook.id, [
       ...cells,
       { id: newId, code: "// New cell", language: "javascript" },
     ]);
@@ -36,6 +35,7 @@ export const NotebookContent: React.FC<NotebookContentProps> = ({
 
   // Create fresh refs by using a key (since cell ids may repeat across notebooks)
   const cellRefs = useRef<Map<number, React.RefObject<CellHandle>>>(new Map());
+
   cells.forEach((cell) => {
     if (!cellRefs.current.has(cell.id)) {
       cellRefs.current.set(cell.id, React.createRef<CellHandle>());
@@ -52,6 +52,7 @@ export const NotebookContent: React.FC<NotebookContentProps> = ({
   };
 
   const formatAllCells = async () => {
+    if (!activeNotebook) return;
     const formattedCells = await Promise.all(
       cells.map(async (cell) => {
         if (cell.language === "markdown") {
@@ -66,7 +67,7 @@ export const NotebookContent: React.FC<NotebookContentProps> = ({
         }
       })
     );
-    onCellsChange(formattedCells);
+    updateNotebookCells(activeNotebook.id, formattedCells);
   };
 
   return (
@@ -107,4 +108,4 @@ export const NotebookContent: React.FC<NotebookContentProps> = ({
       ))}
     </div>
   );
-};
+}

@@ -15,7 +15,7 @@ import {
 } from "../reducers/notebook/actions";
 import { produce } from "immer";
 
-interface NotebookContextType {
+interface NotebooksContextType {
   notebooks: NotebookFile[];
   activeNotebookId: string | null;
   openNotebookIds: string[];
@@ -29,9 +29,9 @@ interface NotebookContextType {
   updateNotebookTitle: (id: string, title: string) => void;
 }
 
-const NotebookContext = createContext<NotebookContextType | null>(null);
+const NotebooksContext = createContext<NotebooksContextType | null>(null);
 
-export function NotebookProvider({ children }: { children: React.ReactNode }) {
+export function NotebooksProvider({ children }: { children: React.ReactNode }) {
   const [notebooks, dispatch] = useReducer(notebooksReducer, []);
   const [openNotebookIds, setOpenNotebookIds] = useState<string[]>([]);
   const [activeNotebookId, setActiveNotebookId] = useState<string | null>(null);
@@ -100,14 +100,14 @@ export function NotebookProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <NotebookContext.Provider value={value}>
+    <NotebooksContext.Provider value={value}>
       {children}
-    </NotebookContext.Provider>
+    </NotebooksContext.Provider>
   );
 }
 
-export function useNotebook() {
-  const context = useContext(NotebookContext);
+export function useNotebooks() {
+  const context = useContext(NotebooksContext);
   if (!context) {
     throw new Error("useNotebook must be used within a NotebookProvider");
   }

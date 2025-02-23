@@ -14,15 +14,15 @@ export function Sidebar({
     <aside
       className={`${
         isSidebarCollapsed ? "w-16" : "w-64"
-      } bg-gray-100 border-r border-gray-300 overflow-y-auto transition-width duration-300`}
+      } bg-slate-100 border-r border-slate-300 overflow-y-auto transition-width duration-300`}
     >
-      <div className="flex justify-between items-center p-4 border-b border-gray-300">
-        <h2 className="text-sm font-semibold text-gray-700">
+      <div className="flex justify-between items-center p-4 border-b border-slate-300">
+        <h2 className="text-sm font-semibold text-slate-700">
           {isSidebarCollapsed ? "NB" : "NOTEBOOKS"}
         </h2>
         <button
           onClick={() => onCollapseSidebar(!isSidebarCollapsed)}
-          className="text-gray-700 hover:bg-gray-300 p-1 rounded"
+          className="text-slate-700 hover:bg-slate-300 p-1 rounded"
         >
           {isSidebarCollapsed ? ">" : "<"}
         </button>
