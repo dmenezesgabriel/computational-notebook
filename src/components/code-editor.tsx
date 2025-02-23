@@ -31,6 +31,8 @@ export function CodeEditor({
       javascript: javascript(),
       typescript: javascript({ typescript: true }),
       markdown: markdown(),
+      jsx: javascript({ jsx: true }),
+      tsx: javascript({ jsx: true, typescript: true }),
     }),
     []
   );

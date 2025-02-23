@@ -7,6 +7,8 @@ export function exportNotebookToMarkdown(notebook: NotebookFile): string {
   const codeLanguages = {
     typescript: "ts",
     javascript: "js",
+    jsx: "jsx",
+    tsx: "tsx",
     markdown: "md",
   };
 

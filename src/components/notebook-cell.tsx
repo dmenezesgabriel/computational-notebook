@@ -67,6 +67,8 @@ function NotebookCell(
         >
           <option value="javascript">JavaScript</option>
           <option value="typescript">TypeScript</option>
+          <option value="jsx">JSX</option>
+          <option value="tsx">TSX</option>
           <option value="markdown">Markdown</option>
         </select>
         <button

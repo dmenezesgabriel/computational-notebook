@@ -11,6 +11,8 @@ export async function importNotebookFromMarkdown(
   const codeLanguages = {
     ts: "typescript",
     js: "javascript",
+    jsx: "jsx",
+    tsx: "tsx",
     md: "markdown",
   };
 

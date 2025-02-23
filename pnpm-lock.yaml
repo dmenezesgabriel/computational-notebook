@@ -29,6 +29,9 @@ importers:
       '@codemirror/view':
         specifier: 6.36.2
         version: 6.36.2
+      '@mdx-js/runtime':
+        specifier: 2.0.0
+        version: 2.0.0
       '@tailwindcss/typography':
         specifier: 0.5.9
         version: 0.5.9(tailwindcss@4.0.3)
@@ -497,6 +500,10 @@ packages:
 
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
+
+  '@mdx-js/runtime@2.0.0':
+    resolution: {integrity: sha512-ZrAldfS/tlYyUEjJJMj186c/U5X6Ty/855bPn82rEwuucaLSoE/TpR07TPWefa5ySadN0mau2tZIryctV6BseA==}
+    deprecated: 'Deprecated: use `evaluate` from `@mdx-js/mdx` instead'
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2440,6 +2447,8 @@ snapshots:
       typescript: 5.6.3
 
   '@marijn/find-cluster-break@1.0.2': {}
+
+  '@mdx-js/runtime@2.0.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

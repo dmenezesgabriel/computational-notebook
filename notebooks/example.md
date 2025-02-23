@@ -58,8 +58,6 @@ function Greetings() {
     <h1>Hello readers, Thankyou for reading this blog! 'a' result is {a}</h1>
   );
 }
-
-return <Greetings />; //displays in an Iframe that as a div with id "root" if there is no return the component is added to the global context and can be accessed by other cells
 ```
 
 <!-- 8 -->
@@ -79,6 +77,4 @@ function Hello({ name }: HelloProps) {
     </h1>
   );
 }
-
-return <Hello name="John" />; //displays in an Iframe that as a div with id "root" if there is no return the component is added to the global context and can be accessed by other cells
 ```

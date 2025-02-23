@@ -3,8 +3,13 @@ import { transformUserCode } from "./code-transform";
 
 const sharedContext: { [key: string]: any } = {};
 
+interface Output {
+  type: "text" | "component";
+  content: string | any;
+}
+
 export async function runCode(code: string, language: string): Promise<string> {
-  let output = "";
+  let output: Output = { type: "text", content: "Code executed successfully." };
   const logs: string[] = [];
 
   // Custom display function that collects output.
@@ -32,6 +37,7 @@ export async function runCode(code: string, language: string): Promise<string> {
     // Inject shared context into the code.
     let contextCode = "";
     const contextKeys = Object.keys(sharedContext);
+
     if (contextKeys.length > 0) {
       contextCode = `const sharedContext = window.sharedContext;\n`;
       for (const key of contextKeys) {
@@ -42,16 +48,35 @@ export async function runCode(code: string, language: string): Promise<string> {
     }
 
     const fullCode = `${contextCode}${finalCode}`;
+    let transpiledCode = fullCode;
 
     console.log("Executing code:\n", fullCode); // Debugging output
 
-    let transpiledCode = fullCode;
     if (language === "typescript") {
       // Transpile TypeScript to ES module code.
       const result = ts.transpileModule(fullCode, {
         compilerOptions: {
           module: ts.ModuleKind.ESNext, // output as ES module
           target: ts.ScriptTarget.ES2015,
+        },
+      });
+      transpiledCode = result.outputText;
+    }
+
+    if (language === "jsx" || language === "tsx") {
+      // Add React to window object for JSX transformation
+      const React = await import("react");
+      const ReactDOM = await import("react-dom");
+      window.React = React;
+      window.ReactDOM = ReactDOM;
+
+      const result = ts.transpileModule(fullCode, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ES2015,
+          jsx: ts.JsxEmit.React,
+          jsxFactory: "React.createElement",
+          jsxFragmentFactory: "React.Fragment",
         },
       });
       transpiledCode = result.outputText;

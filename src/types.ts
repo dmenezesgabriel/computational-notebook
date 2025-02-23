@@ -1,8 +1,15 @@
+export type EditorLanguages =
+  | "javascript"
+  | "typescript"
+  | "markdown"
+  | "jsx"
+  | "tsx";
+
 export interface CellData {
   id: number;
   code: string;
   output?: string;
-  language: "javascript" | "typescript" | "markdown";
+  language: EditorLanguages;
 }
 
 export interface CellHandle {
@@ -14,5 +21,3 @@ export interface NotebookFile {
   title: string;
   cells: CellData[];
 }
-
-export type EditorLanguages = "javascript" | "typescript" | "markdown";
