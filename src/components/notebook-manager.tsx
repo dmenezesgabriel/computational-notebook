@@ -7,6 +7,7 @@ import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
 import { decodeNotebookFromURL } from "../utils/notebook";
 import { useNotebooks } from "../contexts/notebooks-context";
 import { encodeNotebookToURL } from "../utils/notebook";
+import { Button } from "./button";
 
 export function NotebooksManager() {
   const isInitialized = useRef(false);
@@ -119,20 +120,14 @@ export function NotebooksManager() {
           {activeNotebook ? (
             <>
               <div className="flex justify-end mb-4 space-x-2">
-                <button
-                  onClick={handleShareNotebook}
-                  className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                >
-                  <Copy className="w-4 h-4 mr-1" />
-                  Share Notebook
-                </button>
-                <button
-                  onClick={handleExportNotebook}
-                  className="flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  <File className="w-4 h-4 mr-1" />
-                  Export to Markdown
-                </button>
+                <Button.Root onClick={handleShareNotebook}>
+                  <Button.Icon icon={Copy} />
+                  <Button.Text>Share Notebook</Button.Text>
+                </Button.Root>
+                <Button.Root variant="secondary" onClick={handleExportNotebook}>
+                  <Button.Icon icon={File} />
+                  <Button.Text>Export to Markdown</Button.Text>
+                </Button.Root>
               </div>
               <NotebookContent key={activeNotebook.id} />
             </>

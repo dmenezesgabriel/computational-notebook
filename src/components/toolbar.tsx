@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Plus } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { useNotebooks } from "../contexts/notebooks-context";
 import { importNotebookFromMarkdown } from "../utils/import-markdown-notebook";
+import { Button } from "./button";
 
 export function Toolbar() {
   const { createNotebook, openNotebook } = useNotebooks();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateNotebook = () => {
     const newId = uuidv4();
@@ -34,24 +36,23 @@ export function Toolbar() {
     }
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="p-4">
-      <button
-        onClick={handleCreateNotebook}
-        className="flex items-center w-full px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        <Plus className="w-4 h-4 mr-1" />
-        New Notebook
-      </button>
+      <Button.Root onClick={handleCreateNotebook} className="w-full">
+        <Button.Icon icon={Plus} />
+        <Button.Text>New Notebook</Button.Text>
+      </Button.Root>
       <div className="mt-2">
-        <label
-          htmlFor="import-notebook"
-          className="flex items-center w-full px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 cursor-pointer"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Import Notebook
-        </label>
+        <Button.Root variant="secondary" className="w-full" onClick={handleImportClick}>
+          <Button.Icon icon={Plus} />
+          <Button.Text>Import Notebook</Button.Text>
+        </Button.Root>
         <input
+          ref={fileInputRef}
           id="import-notebook"
           type="file"
           accept=".md"

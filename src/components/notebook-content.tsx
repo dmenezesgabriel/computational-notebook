@@ -5,6 +5,7 @@ import { formatCode } from "../utils/code-formatting";
 import { PlayCircle, Plus } from "lucide-react";
 import type { CellData, CellHandle } from "../types";
 import { useNotebooks } from "../contexts/notebooks-context";
+import { Button } from "./button";
 
 export function NotebookContent() {
   const { activeNotebook, updateNotebookCells } = useNotebooks();
@@ -74,28 +75,19 @@ export function NotebookContent() {
     <div>
       <div className="flex items-center mb-4">
         <div className="flex flex-row grow gap-2">
-          <button
-            onClick={runAllCells}
-            className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-          >
-            <PlayCircle className="w-4 h-4 mr-1" />
-            Run All Cells
-          </button>
-          <button
-            onClick={formatAllCells}
-            className="flex items-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-          >
-            <PlayCircle className="w-4 h-4 mr-1" />
-            Format All Cells
-          </button>
+          <Button.Root onClick={runAllCells}>
+            <Button.Icon icon={PlayCircle} />
+            <Button.Text>Run All Cells</Button.Text>
+          </Button.Root>
+          <Button.Root variant="warning" onClick={formatAllCells}>
+            <Button.Icon icon={PlayCircle} />
+            <Button.Text>Format All Cells</Button.Text>
+          </Button.Root>
         </div>
-        <button
-          onClick={addCell}
-          className="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Add Cell
-        </button>
+        <Button.Root variant="secondary" onClick={addCell}>
+          <Button.Icon icon={Plus} />
+          <Button.Text>Add Cell</Button.Text>
+        </Button.Root>
       </div>
       {cells.map((cell) => (
         <Cell
