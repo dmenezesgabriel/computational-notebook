@@ -14,7 +14,7 @@ export async function importNotebookFromMarkdown(
     jsx: "jsx",
     tsx: "tsx",
     md: "markdown",
-  };
+  } as const;
 
   const text = await file.text();
 
@@ -25,6 +25,8 @@ export async function importNotebookFromMarkdown(
   let lastSeenId: number | null = null;
 
   ast.children.forEach((node) => {
+    const codeNode = node as Code;
+
     if (node.type === "text" && node.value.trim() === "") {
       return;
     }
@@ -37,12 +39,10 @@ export async function importNotebookFromMarkdown(
         lastSeenId = parseInt(idMatch[1], 10);
       }
     } else if (node.type === "code") {
-      const codeNode = node as Code;
-
       cells.push({
         id: lastSeenId || Date.now() + Math.random(),
         code: codeNode.value.trim(),
-        language: codeLanguages[codeNode.lang],
+        language: codeLanguages[codeNode.lang as keyof typeof codeLanguages],
       });
 
       lastSeenId = null;
@@ -60,7 +60,7 @@ export async function importNotebookFromMarkdown(
         cells.push({
           id: lastSeenId || Date.now() + Math.random(),
           code: textContent.trim(),
-          language: codeLanguages[codeNode.lang],
+          language: codeLanguages[codeNode.lang as keyof typeof codeLanguages],
         });
         lastSeenId = null;
       }

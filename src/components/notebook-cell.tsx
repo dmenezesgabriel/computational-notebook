@@ -99,7 +99,7 @@ function NotebookCell(
   }, [cell.code, cell.id]);
 
   return (
-    <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden">
+    <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden max-w-full">
       <div className="bg-slate-100 px-3 py-2 flex items-center space-x-2 border-b border-slate-300">
         <select
           value={cell.language}
@@ -152,7 +152,7 @@ function NotebookCell(
         />
       ) : (
         output && (
-          <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono">
+          <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono min-w-0 overflow-x-auto">
             <ReactMarkdown>{output}</ReactMarkdown>
           </div>
         )

@@ -1,5 +1,4 @@
 import type { NotebookFile } from "../types";
-import { fromMarkdown } from "mdast-util-from-markdown";
 import { toMarkdown } from "mdast-util-to-markdown";
 import type { Root, Code, Html } from "mdast";
 

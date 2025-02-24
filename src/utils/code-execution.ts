@@ -3,13 +3,7 @@ import { transformUserCode } from "./code-transform";
 
 export const sharedContext: { [key: string]: any } = {};
 
-interface Output {
-  type: "text" | "component";
-  content: string | any;
-}
-
 export async function runCode(code: string, language: string): Promise<string> {
-  let output: Output = { type: "text", content: "Code executed successfully." };
   const logs: string[] = [];
 
   const display = (...args: any[]) => {
@@ -125,6 +119,6 @@ export async function runCode(code: string, language: string): Promise<string> {
     delete window.display;
   }
 
-  output = logs.length ? logs.join("\n") : "Code executed successfully.";
+  const output = logs.length ? logs.join("\n") : "Code executed successfully.";
   return output;
 }
