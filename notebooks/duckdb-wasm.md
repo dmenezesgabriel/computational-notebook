@@ -30,3 +30,36 @@ const result = await conn.query("SELECT 42 as col");
 
 const out = result.toArray().map((row) => row.toJSON());
 ```
+
+<!-- 3 -->
+
+```js
+const url = 'https://raw.githubusercontent.com/plotly/datasets/master/2015_flights.parquet';
+
+const response = await fetch(url);
+if (!response.ok){
+    throw Error("Failed to fetch")
+}
+
+const buffer = await response.arrayBuffer();
+const uint8Array = new Uint8Array(buffer);
+await db.registerFileBuffer('2015_flights.parquet', uint8Array);
+
+
+const data = await conn.query(`
+SELECT * FROM read_parquet('2015_flights.parquet') LIMIT 10;
+`
+)
+
+const rows = data.toArray().map(row => {
+  const jsonRow = row.toJSON();
+  for (const key in jsonRow) {
+    if (typeof jsonRow[key] === 'bigint') {
+      jsonRow[key] = jsonRow[key].toString();
+    }
+  }
+  return jsonRow;
+});
+
+console.log(data.toString())
+```
