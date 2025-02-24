@@ -1,27 +1,18 @@
 import { useEffect, useState, useRef } from "react";
-import { X, Copy, File } from "lucide-react";
+import { Copy, File } from "lucide-react";
 import { NotebookContent } from "./notebook-content";
 import { Sidebar } from "./sidebar";
+import { NotebookTabs } from "./notebook-tabs";
 import { preloadMarkdownNotebooks } from "../utils/preload-markdown-notebook";
 import { exportNotebookToMarkdown } from "../utils/export-notebook-markdown";
-import { decodeNotebookFromURL } from "../utils/notebook";
+import { decodeNotebookFromURL } from "../utils/decode-notebook-url";
 import { useNotebooks } from "../contexts/notebooks-context";
-import { encodeNotebookToURL } from "../utils/notebook";
+import { encodeNotebookToURL } from "../utils/encode-notebook-url";
 import { Button } from "./button";
 
 export function NotebooksManager() {
   const isInitialized = useRef(false);
-  const {
-    notebooks,
-    openNotebookIds,
-    activeNotebookId,
-    activeNotebook,
-    setActiveNotebookId,
-    createNotebook,
-    closeNotebookTab,
-    updateNotebookTitle,
-    openNotebook,
-  } = useNotebooks();
+  const { activeNotebook, createNotebook, openNotebook } = useNotebooks();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [tabsMaxWidth, setTabsMaxWidth] = useState<number>(800);
@@ -48,17 +39,13 @@ export function NotebooksManager() {
 
   useEffect(() => {
     const updateTabsMaxWidth = () => {
-      const sidebarWidth = isSidebarCollapsed ? 64 : 256; // Adjust based on your sidebar's actual width
+      const sidebarWidth = isSidebarCollapsed ? 64 : 256;
       const availableWidth = window.innerWidth - sidebarWidth;
       setTabsMaxWidth(availableWidth);
     };
 
-    // Initial calculation
     updateTabsMaxWidth();
-
-    // Update on window resize
     window.addEventListener("resize", updateTabsMaxWidth);
-
     return () => window.removeEventListener("resize", updateTabsMaxWidth);
   }, [isSidebarCollapsed]);
 
@@ -96,48 +83,9 @@ export function NotebooksManager() {
         onCollapseSidebar={setIsSidebarCollapsed}
       />
 
-      {/* Main Content Area with Tabbed View */}
       <main className="flex-1 flex flex-col bg-white min-w-0">
-        {/* Tabs Header */}
-        <div
-          className="flex space-x-px bg-slate-100 border-b border-slate-300 overflow-x-auto"
-          style={{ maxWidth: `${tabsMaxWidth}px` }}
-        >
-          <div className="flex flex-nowrap whitespace-nowrap">
-            {openNotebookIds.map((id) => {
-              const nb = notebooks.find((n) => n.id === id);
-              if (!nb) return null;
-              return (
-                <div
-                  key={id}
-                  onClick={() => setActiveNotebookId(id)}
-                  className={`flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer ${
-                    activeNotebookId === id
-                      ? "bg-white text-slate-700 border-t-2 border-t-blue-500"
-                      : "text-slate-500 hover:bg-slate-200"
-                  }`}
-                >
-                  <input
-                    type="text"
-                    value={nb.title}
-                    onChange={(e) => updateNotebookTitle(id, e.target.value)}
-                    className="bg-transparent border-none focus:outline-none"
-                  />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeNotebookTab(id);
-                    }}
-                    className="text-slate-700 hover:bg-slate-300 p-1 rounded"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {/* Active Notebook Content */}
+        <NotebookTabs tabsMaxWidth={tabsMaxWidth} />
+
         <div className="flex-1 overflow-auto p-4">
           {activeNotebook ? (
             <>
