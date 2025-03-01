@@ -4,10 +4,10 @@ type ButtonVariant = "primary" | "secondary" | "danger" | "warning";
 type ButtonSize = "sm" | "md";
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "border border-blue-500 text-blue-600 hover:bg-blue-50",
-  secondary: "border border-slate-300 text-slate-700 hover:bg-slate-100",
-  danger: "border border-red-500 text-red-600 hover:bg-red-50",
-  warning: "border border-orange-500 text-orange-600 hover:bg-orange-50",
+  primary: "border border-blue-500 text-blue-600 hover:bg-blue-100",
+  secondary: "border border-slate-300 text-slate-700 hover:bg-slate-200",
+  danger: "border border-red-500 text-red-600 hover:bg-red-100",
+  warning: "border border-orange-500 text-orange-600 hover:bg-orange-100",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -31,7 +31,7 @@ export function ButtonRoot({
     <button
       {...props}
       className={cn(
-        "flex items-center rounded transition-colors duration-200",
+        "flex items-center rounded transition-colors duration-200 hover:cursor-pointer",
         variantStyles[variant],
         sizeStyles[size],
         className
