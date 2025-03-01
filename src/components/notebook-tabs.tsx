@@ -2,11 +2,7 @@ import { X } from "lucide-react";
 import { useNotebooks } from "../contexts/notebooks-context";
 import { Tabs } from "./tabs";
 
-interface NotebookTabsProps {
-  tabsMaxWidth: number;
-}
-
-export function NotebookTabs({ tabsMaxWidth }: NotebookTabsProps) {
+export function NotebookTabs() {
   const {
     notebooks,
     openNotebookIds,
@@ -17,7 +13,7 @@ export function NotebookTabs({ tabsMaxWidth }: NotebookTabsProps) {
   } = useNotebooks();
 
   return (
-    <Tabs.Root maxWidth={tabsMaxWidth}>
+    <Tabs.Root>
       {openNotebookIds.map((id) => {
         const nb = notebooks.find((n) => n.id === id);
         if (!nb) return null;
