@@ -12,6 +12,7 @@ interface CodeEditorProps {
   language: EditorLanguages;
   onChange: (value: string) => void;
   wordWrap?: boolean;
+  maxHeight?: string; // Add maxHeight prop
 }
 
 export function CodeEditor({
@@ -19,6 +20,7 @@ export function CodeEditor({
   language,
   onChange,
   wordWrap,
+  maxHeight = "500px", // Default maxHeight
 }: CodeEditorProps) {
   const editorDivRef = useRef<HTMLDivElement>(null);
   const editorViewRef = useRef<EditorView>();
@@ -103,5 +105,10 @@ export function CodeEditor({
     }
   }, [wordWrap]);
 
-  return <div ref={editorDivRef} />;
+  return (
+    <div
+      ref={editorDivRef}
+      style={{ maxHeight, overflow: "auto" }} // Apply maxHeight and overflow styles
+    />
+  );
 }
