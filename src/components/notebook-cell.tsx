@@ -1,7 +1,7 @@
 import { useState, useImperativeHandle, forwardRef, useCallback } from "react";
 
 import { runCode } from "../utils/code-execution";
-import { PlayCircle, Trash2, WrapText } from "lucide-react";
+import { PlayCircle, Trash2, WrapText, SeparatorHorizontal, SeparatorVertical } from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
 import type { CellData, CellHandle, EditorLanguages } from "../types";
@@ -19,6 +19,7 @@ function NotebookCell(
 ) {
   const [output, setOutput] = useState<string>("");
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
+  const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
 
   const handleRun = async () => {
     if (cell.language === "markdown") {
@@ -57,6 +58,10 @@ function NotebookCell(
     setIsWordWrapEnabled(!isWordWrapEnabled);
   };
 
+  const toggleLayout = () => {
+    setIsHorizontalLayout(!isHorizontalLayout);
+  };
+
   return (
     <div className="bg-white border border-slate-300 rounded-md my-2 overflow-hidden max-w-full">
       <div className="bg-slate-100 px-3 py-2 flex items-center space-x-2 border-b border-slate-300">
@@ -92,24 +97,39 @@ function NotebookCell(
         >
           <WrapText className="w-4 h-4" />
         </button>
+        <button
+          onClick={toggleLayout}
+          className="flex items-center justify-center text-slate-800 hover:bg-slate-300 p-1 rounded"
+          title="Toggle Layout"
+        >
+          {isHorizontalLayout ? (
+            <SeparatorVertical className="w-4 h-4" />
+          ) : (
+            <SeparatorHorizontal className="w-4 h-4" />
+          )}
+        </button>
       </div>
-      <div className="px-4 py-2">
-        <CodeEditor
-          value={cell.code}
-          language={cell.language}
-          onChange={handleCodeChange}
-          wordWrap={isWordWrapEnabled}
-        />
+      <div className={`${isHorizontalLayout ? 'flex' : 'block'}`}>
+        <div className={`${isHorizontalLayout ? 'w-1/2' : 'w-full'} px-4 py-2`}>
+          <CodeEditor
+            value={cell.code}
+            language={cell.language}
+            onChange={handleCodeChange}
+            wordWrap={isWordWrapEnabled}
+          />
+        </div>
+        <div className={`${isHorizontalLayout ? 'w-1/2' : 'w-full'}`}>
+          {cell.language === "jsx" || cell.language === "tsx" ? (
+            <IframeOutput code={cell.code} id={cell.id} result={output} />
+          ) : (
+            output && (
+              <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono min-w-0 overflow-x-auto">
+                <ReactMarkdown>{output}</ReactMarkdown>
+              </div>
+            )
+          )}
+        </div>
       </div>
-      {cell.language === "jsx" || cell.language === "tsx" ? (
-        <IframeOutput code={cell.code} id={cell.id} result={output} />
-      ) : (
-        output && (
-          <div className="border-t border-slate-300 bg-slate-100 p-4 text-sm font-mono min-w-0 overflow-x-auto">
-            <ReactMarkdown>{output}</ReactMarkdown>
-          </div>
-        )
-      )}
     </div>
   );
 }
