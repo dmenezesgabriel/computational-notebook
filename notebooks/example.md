@@ -50,8 +50,8 @@ x;
 <!-- 7 -->
 
 ```jsx
-import React from "https://cdn.jsdelivr.net/npm/react@18/+esm";
-import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18/+esm";
+const React = await import("https://esm.sh/react@19/?dev");
+const ReactDOM = await import("https://esm.sh/react-dom@19/client?dev");
 
 function Greetings() {
   return (
@@ -75,8 +75,8 @@ root1.render(<GrettingApp />);
 <!-- 8 -->
 
 ```tsx
-import React from "https://cdn.jsdelivr.net/npm/react@18/+esm";
-import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18/+esm";
+const React = await import("https://esm.sh/react@19/?dev");
+const ReactDOM = await import("https://esm.sh/react-dom@19/client?dev");
 
 type HelloProps = {
   name: string;

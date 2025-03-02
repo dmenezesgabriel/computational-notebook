@@ -1,8 +1,8 @@
 <!-- 1 -->
 
 ```jsx
-import React from "https://esm.sh/react@19/?dev";
-import ReactDOM from "https://esm.sh/react-dom@19/client?dev";
+const React = await import("https://esm.sh/react@19/?dev");
+const ReactDOM = await import("https://esm.sh/react-dom@19/client?dev");
 
 function Counter() {
   const [count, setCount] = React.useState(0);
