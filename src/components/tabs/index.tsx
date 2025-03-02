@@ -1,7 +1,7 @@
-import { TabsRoot } from "./tabs-root";
-import { TabItem } from "./tabs-item";
+import { TabRoot } from "./tab-root";
+import { TabItem } from "./tab-item";
 
 export const Tabs = {
-  Root: TabsRoot,
+  Root: TabRoot,
   Item: TabItem,
 };
