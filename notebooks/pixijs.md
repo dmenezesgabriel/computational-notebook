@@ -62,3 +62,195 @@ button.y = 100; // Position 100px from the top
 app.stage.addChild(counterText);
 app.stage.addChild(button);// New notebook cell
 ```
+
+<!-- 2 -->
+
+```jsx
+const PIXI = await import("https://esm.sh/pixi.js@6.0.4");
+
+const app = new PIXI.Application({
+  width: 800,
+  height: 600,
+  backgroundColor: 0x1099bb,
+});
+document.body.appendChild(app.view);
+
+// Load the spritesheet
+PIXI.Loader.shared
+  .add("character", "https://i.sstatic.net/AjFP5.png")
+  .load(setup);
+
+function setup() {
+  // Create animated sprite from spritesheet
+  const texture = PIXI.Loader.shared.resources["character"].texture;
+  const spriteSize = 256
+  const framesPerRow = 4
+  const spriteWidth = spriteSize/framesPerRow
+  const spriteHeight = spriteSize/framesPerRow;
+
+  // Create texture arrays for each direction
+  const downFrames = [];
+  const leftFrames = [];
+  const rightFrames = [];
+  const upFrames = [];
+
+  for (let i = 0; i < 4; i++) {
+    downFrames.push(
+      new PIXI.Texture(
+        texture,
+        new PIXI.Rectangle(i * spriteWidth, 0, spriteWidth, spriteHeight),
+      ),
+    );
+    leftFrames.push(
+      new PIXI.Texture(
+        texture,
+        new PIXI.Rectangle(
+          i * spriteWidth,
+          spriteHeight,
+          spriteWidth,
+          spriteHeight,
+        ),
+      ),
+    );
+    rightFrames.push(
+      new PIXI.Texture(
+        texture,
+        new PIXI.Rectangle(
+          i * spriteWidth,
+          spriteHeight * 2,
+          spriteWidth,
+          spriteHeight,
+        ),
+      ),
+    );
+    upFrames.push(
+      new PIXI.Texture(
+        texture,
+        new PIXI.Rectangle(
+          i * spriteWidth,
+          spriteHeight * 3,
+          spriteWidth,
+          spriteHeight,
+        ),
+      ),
+    );
+  }
+
+  // Create animated sprite
+  const character = new PIXI.AnimatedSprite(downFrames);
+  character.animationSpeed = 0.2;
+  character.loop = true;
+  character.x = app.screen.width / 2;
+  character.y = app.screen.height / 2;
+  character.anchor.set(0.5);
+  app.stage.addChild(character);
+
+  // Movement variables
+  const speed = 3;
+  let currentDirection = "down";
+  const keys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false,
+  };
+
+  // Keyboard events
+  document.addEventListener("keydown", (e) => {
+    switch (e.key.toLowerCase()) {
+      case "w":
+        keys.w = true;
+        break;
+      case "a":
+        keys.a = true;
+        break;
+      case "s":
+        keys.s = true;
+        break;
+      case "d":
+        keys.d = true;
+        break;
+    }
+  });
+
+  document.addEventListener("keyup", (e) => {
+    switch (e.key.toLowerCase()) {
+      case "w":
+        keys.w = false;
+        break;
+      case "a":
+        keys.a = false;
+        break;
+      case "s":
+        keys.s = false;
+        break;
+      case "d":
+        keys.d = false;
+        break;
+    }
+  });
+
+  // Game loop
+  app.ticker.add(() => {
+    let moving = false;
+
+    // Handle movement and direction changes
+    if (keys.w) {
+      character.y -= speed;
+      if (currentDirection !== "up") {
+        character.textures = upFrames;
+        currentDirection = "up";
+        character.gotoAndPlay(0);
+      }
+      moving = true;
+    }
+    if (keys.s) {
+      character.y += speed;
+      if (currentDirection !== "down") {
+        character.textures = downFrames;
+        currentDirection = "down";
+        character.gotoAndPlay(0);
+      }
+      moving = true;
+    }
+    if (keys.a) {
+      character.x -= speed;
+      if (currentDirection !== "left") {
+        character.textures = leftFrames;
+        currentDirection = "left";
+        character.gotoAndPlay(0);
+      }
+      moving = true;
+    }
+    if (keys.d) {
+      character.x += speed;
+      if (currentDirection !== "right") {
+        character.textures = rightFrames;
+        currentDirection = "right";
+        character.gotoAndPlay(0);
+      }
+      moving = true;
+    }
+
+    // Control animation playback
+    if (moving) {
+      if (!character.playing) {
+        character.play();
+      }
+    } else {
+      character.stop();
+      character.gotoAndStop(0);
+    }
+
+    // Keep character in bounds
+    character.x = Math.max(
+      spriteWidth / 2,
+      Math.min(app.screen.width - spriteWidth / 2, character.x),
+    );
+    character.y = Math.max(
+      spriteHeight / 2,
+      Math.min(app.screen.height - spriteHeight / 2, character.y),
+    );
+  });
+}
+```
