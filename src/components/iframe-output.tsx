@@ -8,7 +8,7 @@ interface IframeOutputProps {
 }
 
 export function IframeOutput({ code, id, result }: IframeOutputProps) {
-  const [iframeHeight, setIframeHeight] = useState(300);
+  const [iframeHeight, setIframeHeight] = useState(0);
   const [iframeKey, setIframeKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 

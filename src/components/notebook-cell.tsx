@@ -1,11 +1,18 @@
 import { useState, useImperativeHandle, forwardRef, useCallback } from "react";
 
 import { runCode } from "../utils/code-execution";
-import { PlayCircle, Trash2, WrapText, SeparatorHorizontal, SeparatorVertical } from "lucide-react";
+import {
+  PlayCircle,
+  Trash2,
+  WrapText,
+  SeparatorHorizontal,
+  SeparatorVertical,
+} from "lucide-react";
 import { CodeEditor } from "./code-editor";
 import ReactMarkdown from "react-markdown";
 import type { CellData, CellHandle, EditorLanguages } from "../types";
 import { IframeOutput } from "./iframe-output";
+import { cn } from "../lib/utils";
 
 interface NotebookCellProps {
   cell: CellData;
@@ -109,8 +116,10 @@ function NotebookCell(
           )}
         </button>
       </div>
-      <div className={`${isHorizontalLayout ? 'flex' : 'block'}`}>
-        <div className={`${isHorizontalLayout ? 'w-1/2' : 'w-full'} px-4 py-2`}>
+      <div className={cn(isHorizontalLayout ? "flex" : "block")}>
+        <div
+          className={cn(isHorizontalLayout ? "w-1/2" : "w-full", "px-4 py-2")}
+        >
           <CodeEditor
             value={cell.code}
             language={cell.language}
@@ -118,7 +127,7 @@ function NotebookCell(
             wordWrap={isWordWrapEnabled}
           />
         </div>
-        <div className={`${isHorizontalLayout ? 'w-1/2' : 'w-full'}`}>
+        <div className={cn(isHorizontalLayout ? "w-1/2 py-2 px-4" : "w-full")}>
           {cell.language === "jsx" || cell.language === "tsx" ? (
             <IframeOutput code={cell.code} id={cell.id} result={output} />
           ) : (
