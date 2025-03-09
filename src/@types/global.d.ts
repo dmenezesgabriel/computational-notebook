@@ -1,8 +1,8 @@
 export declare global {
   interface Window {
-    [key: string]: any;
+    [key: string]: unknown;
 
-    display?: (...args: any[]) => void;
-    sharedContext: { [key: string]: any };
+    display?: (...args: unknown[]) => void;
+    sharedContext?: { [key: string]: unknown };
   }
 }

@@ -1,5 +1,6 @@
+// iframe-output.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sharedContext } from "../utils/code-execution";
+import { useSharedContextStore } from "../store/shared-context-store";
 
 interface IframeOutputProps {
   code: string;
@@ -11,6 +12,7 @@ export function IframeOutput({ code, id, result }: IframeOutputProps) {
   const [iframeHeight, setIframeHeight] = useState(0);
   const [iframeKey, setIframeKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { sharedContext } = useSharedContextStore(); // Use the store here
 
   const updateIframeHeight = useCallback(() => {
     const iframe = iframeRef.current;
@@ -20,18 +22,19 @@ export function IframeOutput({ code, id, result }: IframeOutputProps) {
     }
   }, []);
 
-  const getIframeSharedContext = () => {
+  const getIframeSharedContext = useCallback(() => {
     const iframe = iframeRef.current;
     if (iframe) {
       const iframeWindow = iframe.contentWindow;
       if (iframeWindow) {
-        iframeWindow.sharedContext = sharedContext;
+        iframeWindow.sharedContext = sharedContext; // Inject the store's sharedContext
       }
     }
-  };
+  }, [sharedContext]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
+
     if (iframe) {
       const document = iframe.contentDocument;
       if (document) {
@@ -39,10 +42,12 @@ export function IframeOutput({ code, id, result }: IframeOutputProps) {
         const rootDiv = document.createElement("div");
         rootDiv.setAttribute("id", "root");
         document.body.appendChild(rootDiv);
+
         const script = document.createElement("script");
         script.type = "module";
         script.textContent = result;
         document.body.appendChild(script);
+
         getIframeSharedContext();
 
         const resizeObserver = new ResizeObserver(() => {
@@ -53,7 +58,7 @@ export function IframeOutput({ code, id, result }: IframeOutputProps) {
         setTimeout(updateIframeHeight, 100);
       }
     }
-  }, [result, updateIframeHeight]);
+  }, [getIframeSharedContext, result, updateIframeHeight]);
 
   useEffect(() => {
     setIframeKey((prevKey) => prevKey + 1);
