@@ -9,14 +9,17 @@ interface SharedContextState {
 
 export const useSharedContextStore = create<SharedContextState>((set) => ({
   sharedContext: {},
+
   setContext: (key, value) =>
     set((state) => ({
       sharedContext: { ...state.sharedContext, [key]: value },
     })),
+
   mergeContext: (newContext) =>
     set((state) => ({
       sharedContext: { ...state.sharedContext, ...newContext },
     })),
+
   clearContext: () =>
     set(() => ({
       sharedContext: {},
