@@ -63,3 +63,33 @@ const rows = data.toArray().map(row => {
 
 console.log(data.toString())
 ```
+
+<!-- 4 -->
+
+```js
+const { default: Handlebars } = await import("https://cdn.jsdelivr.net/npm/handlebars@4.7.8/+esm");
+
+await conn.query(`
+  CREATE TABLE sales (region TEXT, amount INT);
+  INSERT INTO sales VALUES ('US', 100), ('EU', 200), ('US', 150);
+`);
+
+const sqlTemplate = `
+  SELECT region, SUM(amount) as total
+  FROM sales
+  {{#if regionFilter}}
+    WHERE region = '{{regionFilter}}'
+  {{/if}}
+  GROUP BY region
+`;
+
+const template = Handlebars.compile(sqlTemplate);
+
+const query = template({ regionFilter: "US" });
+
+console.log("Executing SQL:\n", query);
+
+const result = await conn.query(query);
+const output = result.toArray().map((row) => row.toJSON());
+console.log("Query Result:", output);
+```
